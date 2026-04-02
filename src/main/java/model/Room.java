@@ -33,6 +33,10 @@ public class Room {
     @Builder.Default
     private RoomPhase phase = RoomPhase.PRE_FLOP;
 
+    @Column(name = "initial_chips")
+    @Builder.Default
+    private Integer initialChips = 1000;
+
     @Column(name = "pot")
     @Builder.Default
     private Integer pot = 0;
