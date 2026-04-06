@@ -1,6 +1,6 @@
-package repository;
+package com.manrique.chipsimulator.repository;
 
-import model.RoomPlayer;
+import com.manrique.chipsimulator.model.RoomPlayer;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

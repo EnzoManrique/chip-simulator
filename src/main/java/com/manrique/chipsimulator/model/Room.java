@@ -1,9 +1,9 @@
-package model;
+package com.manrique.chipsimulator.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import model.enums.RoomStatus;
-import model.enums.RoomPhase;
+import com.manrique.chipsimulator.model.enums.RoomStatus;
+import com.manrique.chipsimulator.model.enums.RoomPhase;
 import java.util.ArrayList;
 import java.util.List;
 

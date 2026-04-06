@@ -1,11 +1,11 @@
-package service;
+package com.manrique.chipsimulator.service;
 
-import dto.RoomCreateRequestDTO;
-import dto.RoomResponseDTO;
-import model.Room;
-import model.enums.RoomPhase;
-import model.enums.RoomStatus;
-import repository.RoomRepository;
+import com.manrique.chipsimulator.dto.RoomCreateRequestDTO;
+import com.manrique.chipsimulator.dto.RoomResponseDTO;
+import com.manrique.chipsimulator.model.Room;
+import com.manrique.chipsimulator.model.enums.RoomPhase;
+import com.manrique.chipsimulator.model.enums.RoomStatus;
+import com.manrique.chipsimulator.repository.RoomRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

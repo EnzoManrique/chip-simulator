@@ -1,4 +1,4 @@
-package model;
+package com.manrique.chipsimulator.model;
 
 import jakarta.persistence.*;
 import lombok.*;

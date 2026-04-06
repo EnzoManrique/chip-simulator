@@ -1,6 +1,6 @@
-package repository;
+package com.manrique.chipsimulator.repository;
 
-import model.ActionLog;
+import com.manrique.chipsimulator.model.ActionLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

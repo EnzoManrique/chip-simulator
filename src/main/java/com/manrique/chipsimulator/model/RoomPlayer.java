@@ -1,8 +1,8 @@
-package model;
+package com.manrique.chipsimulator.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import model.enums.PlayerStatus;
+import com.manrique.chipsimulator.model.enums.PlayerStatus;
 
 @Entity
 @Table(name = "room_players")

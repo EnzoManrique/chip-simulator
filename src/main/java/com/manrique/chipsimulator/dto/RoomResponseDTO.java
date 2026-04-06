@@ -1,4 +1,4 @@
-package dto;
+package com.manrique.chipsimulator.dto;
 
 public record RoomResponseDTO(
         String code,

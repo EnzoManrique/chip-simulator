@@ -1,7 +1,7 @@
-package repository;
+package com.manrique.chipsimulator.repository;
 
-import model.Room;
-import model.enums.RoomStatus;
+import com.manrique.chipsimulator.model.Room;
+import com.manrique.chipsimulator.model.enums.RoomStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

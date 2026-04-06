@@ -1,4 +1,4 @@
-package model.enums;
+package com.manrique.chipsimulator.model.enums;
 
 public enum PlayerStatus {
     ACTIVE,

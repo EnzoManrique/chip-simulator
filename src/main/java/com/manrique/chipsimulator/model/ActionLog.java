@@ -1,8 +1,8 @@
-package model;
+package com.manrique.chipsimulator.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import model.enums.ActionType;
+import com.manrique.chipsimulator.model.enums.ActionType;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
