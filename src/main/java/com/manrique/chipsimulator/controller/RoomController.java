@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import com.manrique.chipsimulator.service.RoomService;
+import com.manrique.chipsimulator.dto.JoinRoomRequestDTO;
+import com.manrique.chipsimulator.dto.RoomPlayerResponseDTO;
 
 @RestController
 @RequestMapping("/api/rooms")
@@ -30,6 +32,12 @@ public class RoomController {
     @GetMapping("/{code}")
     public ResponseEntity<RoomResponseDTO> getRoomByCode(@PathVariable String code) {
         RoomResponseDTO response = roomService.getRoomByCode(code);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{code}/join")
+    public ResponseEntity<RoomPlayerResponseDTO> joinRoom(@PathVariable String code, @Valid @RequestBody JoinRoomRequestDTO request) {
+        RoomPlayerResponseDTO response = roomService.joinRoom(code, request);
         return ResponseEntity.ok(response);
     }
 }
