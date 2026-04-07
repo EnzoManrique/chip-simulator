@@ -37,9 +37,9 @@ public class Room {
     @Builder.Default
     private Integer initialChips = 1000;
 
-    @Column(name = "pot")
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
-    private Integer pot = 0;
+    private List<Pot> pots = new ArrayList<>();
 
     @Column(name = "dealer_seat")
     @Builder.Default
