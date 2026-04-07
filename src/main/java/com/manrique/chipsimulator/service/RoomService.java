@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.util.List;
 
 @Service
 public class RoomService {
@@ -78,10 +79,6 @@ public class RoomService {
         Room room = roomRepository.findByCode(roomCode)
                 .orElseThrow(() -> new RuntimeException("Room not found"));
 
-        if (room.getStatus() != RoomStatus.WAITING) {
-            throw new RuntimeException("Partida ya iniciada");
-        }
-
         User user = userRepository.findByUsername(request.username())
                 .orElseGet(() -> {
                     User newUser = User.builder()
@@ -93,15 +90,79 @@ public class RoomService {
 
         int seatNumber = roomPlayerRepository.countByRoomId(room.getId()) + 1;
 
+        boolean inHand = room.getStatus() == RoomStatus.WAITING;
+
         RoomPlayer roomPlayer = RoomPlayer.builder()
                 .room(room)
                 .user(user)
                 .seatNumber(seatNumber)
                 .chipsBalance(room.getInitialChips())
+                .inHand(inHand)
                 .build();
 
         roomPlayerRepository.save(roomPlayer);
 
         return new RoomPlayerResponseDTO(user.getUsername(), roomPlayer.getSeatNumber(), roomPlayer.getChipsBalance());
+    }
+
+    @Transactional
+    public RoomResponseDTO startGame(String roomCode) {
+        Room room = roomRepository.findByCode(roomCode)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        if (room.getStatus() != RoomStatus.WAITING) {
+            throw new RuntimeException("La partida ya empezó");
+        }
+
+        List<RoomPlayer> players = roomPlayerRepository.findByRoomIdOrderBySeatNumberAsc(room.getId());
+        if (players.size() < 2) {
+            throw new RuntimeException("Se necesitan al menos 2 jugadores para iniciar");
+        }
+
+        room.setStatus(RoomStatus.PLAYING);
+        room.setPhase(RoomPhase.PRE_FLOP);
+        room.setDealerSeat(1);
+
+        RoomPlayer sbPlayer;
+        RoomPlayer bbPlayer;
+        int turnSeat;
+
+        int numPlayers = players.size();
+        if (numPlayers == 2) {
+            sbPlayer = players.get(0); // dealer es SB en heads up
+            bbPlayer = players.get(1); // el otro es BB
+            turnSeat = 1; // Dealer (SB) actúa primero preflop
+        } else if (numPlayers == 3) {
+            sbPlayer = players.get(1);
+            bbPlayer = players.get(2);
+            turnSeat = 1; // UTG es el Dealer
+        } else {
+            sbPlayer = players.get(1);
+            bbPlayer = players.get(2);
+            turnSeat = 4; // UTG actúa primero
+        }
+
+        room.setTurnSeat(turnSeat);
+
+        int sbAmount = room.getSmallBlindAmount();
+        int bbAmount = sbAmount * 2;
+
+        sbPlayer.setChipsBalance(sbPlayer.getChipsBalance() - sbAmount);
+        sbPlayer.setCurrentBet(sbAmount);
+        
+        bbPlayer.setChipsBalance(bbPlayer.getChipsBalance() - bbAmount);
+        bbPlayer.setCurrentBet(bbAmount);
+
+        room.setPot(sbAmount + bbAmount);
+        room.setHighestBet(bbAmount);
+
+        roomPlayerRepository.saveAll(players);
+        Room savedRoom = roomRepository.save(room);
+
+        return new RoomResponseDTO(
+                savedRoom.getCode(),
+                savedRoom.getInitialChips(),
+                savedRoom.getStatus().name(),
+                savedRoom.getPhase().name());
     }
 }

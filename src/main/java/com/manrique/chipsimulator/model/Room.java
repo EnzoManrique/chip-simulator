@@ -53,6 +53,10 @@ public class Room {
     @Builder.Default
     private Integer highestBet = 0;
 
+    @Column(name = "small_blind_amount")
+    @Builder.Default
+    private Integer smallBlindAmount = 10; // Valor por defecto, ej: 10 fichas
+
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private List<RoomPlayer> players = new ArrayList<>();

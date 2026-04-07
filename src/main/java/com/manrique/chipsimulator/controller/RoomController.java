@@ -40,4 +40,10 @@ public class RoomController {
         RoomPlayerResponseDTO response = roomService.joinRoom(code, request);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/{code}/start")
+    public ResponseEntity<RoomResponseDTO> startGame(@PathVariable String code) {
+        RoomResponseDTO response = roomService.startGame(code);
+        return ResponseEntity.ok(response);
+    }
 }

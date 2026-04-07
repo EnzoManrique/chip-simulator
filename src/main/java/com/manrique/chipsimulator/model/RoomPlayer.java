@@ -36,6 +36,10 @@ public class RoomPlayer {
     @Builder.Default
     private Integer currentBet = 0;
 
+    @Column(name = "in_hand")
+    @Builder.Default
+    private Boolean inHand = false; // Por defecto es false, el servicio decidirá
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     @Builder.Default
