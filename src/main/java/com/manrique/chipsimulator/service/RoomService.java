@@ -51,4 +51,15 @@ public class RoomService {
         }
         return builder.toString();
     }
+
+    @Transactional(readOnly = true)
+    public RoomResponseDTO getRoomByCode(String code) {
+        Room room = roomRepository.findByCode(code)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+        return new RoomResponseDTO(
+                room.getCode(),
+                room.getInitialChips(),
+                room.getStatus().name(),
+                room.getPhase().name());
+    }
 }

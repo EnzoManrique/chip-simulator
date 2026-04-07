@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import com.manrique.chipsimulator.service.RoomService;
 
 @RestController
@@ -23,5 +25,11 @@ public class RoomController {
     public ResponseEntity<RoomResponseDTO> createRoom(@Valid @RequestBody RoomCreateRequestDTO request) {
         RoomResponseDTO response = roomService.createRoom(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping("/{code}")
+    public ResponseEntity<RoomResponseDTO> getRoomByCode(@PathVariable String code) {
+        RoomResponseDTO response = roomService.getRoomByCode(code);
+        return ResponseEntity.ok(response);
     }
 }
