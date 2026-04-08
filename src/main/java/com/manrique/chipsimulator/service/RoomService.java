@@ -15,6 +15,7 @@ import com.manrique.chipsimulator.repository.RoomPlayerRepository;
 import com.manrique.chipsimulator.repository.UserRepository;
 import com.manrique.chipsimulator.repository.PotRepository;
 import com.manrique.chipsimulator.dto.PlayerActionRequestDTO;
+import com.manrique.chipsimulator.dto.EndHandRequestDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -343,5 +344,40 @@ public class RoomService {
             case RIVER: return BettingPhase.SHOWDOWN;
             default: return currentPhase;
         }
+    }
+
+    @Transactional
+    public void endHand(String roomCode, EndHandRequestDTO request) {
+        Room room = roomRepository.findByCode(roomCode)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        if (room.getStatus() != RoomStatus.PLAYING) {
+            throw new RuntimeException("La partida no está en curso");
+        }
+
+        room.setPhase(BettingPhase.SHOWDOWN);
+
+        for (Pot pot : room.getPots()) {
+            List<RoomPlayer> eligibleWinners = pot.getEligiblePlayers().stream()
+                    .filter(p -> request.winnerUsernames().contains(p.getUser().getUsername()))
+                    .toList();
+
+            if (!eligibleWinners.isEmpty()) {
+                int splitAmount = pot.getAmount() / eligibleWinners.size();
+                int extraChips = pot.getAmount() % eligibleWinners.size();
+
+                for (int i = 0; i < eligibleWinners.size(); i++) {
+                    RoomPlayer winner = eligibleWinners.get(i);
+                    int amountToAdd = splitAmount;
+                    if (i == 0) {
+                        amountToAdd += extraChips;
+                    }
+                    winner.setChipsBalance(winner.getChipsBalance() + amountToAdd);
+                }
+            }
+        }
+
+        room.getPots().clear();
+        roomRepository.save(room);
     }
 }

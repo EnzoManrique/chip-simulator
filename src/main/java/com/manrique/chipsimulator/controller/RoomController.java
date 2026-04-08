@@ -16,6 +16,7 @@ import com.manrique.chipsimulator.service.RoomService;
 import com.manrique.chipsimulator.dto.JoinRoomRequestDTO;
 import com.manrique.chipsimulator.dto.RoomPlayerResponseDTO;
 import com.manrique.chipsimulator.dto.PlayerActionRequestDTO;
+import com.manrique.chipsimulator.dto.EndHandRequestDTO;
 
 @RestController
 @RequestMapping("/api/rooms")
@@ -51,6 +52,12 @@ public class RoomController {
     @PostMapping("/{code}/action/{username}")
     public ResponseEntity<Void> processAction(@PathVariable String code, @PathVariable String username, @Valid @RequestBody PlayerActionRequestDTO request) {
         roomService.processAction(code, username, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{code}/end-hand")
+    public ResponseEntity<Void> endHand(@PathVariable String code, @Valid @RequestBody EndHandRequestDTO request) {
+        roomService.endHand(code, request);
         return ResponseEntity.ok().build();
     }
 }
