@@ -8,7 +8,7 @@ import com.manrique.chipsimulator.model.Room;
 import com.manrique.chipsimulator.model.User;
 import com.manrique.chipsimulator.model.RoomPlayer;
 import com.manrique.chipsimulator.model.Pot;
-import com.manrique.chipsimulator.model.enums.RoomPhase;
+import com.manrique.chipsimulator.model.enums.BettingPhase;
 import com.manrique.chipsimulator.model.enums.RoomStatus;
 import com.manrique.chipsimulator.repository.RoomRepository;
 import com.manrique.chipsimulator.repository.RoomPlayerRepository;
@@ -47,7 +47,7 @@ public class RoomService {
         Room room = Room.builder()
                 .code(code)
                 .status(RoomStatus.WAITING)
-                .phase(RoomPhase.PRE_FLOP)
+                .phase(BettingPhase.PRE_FLOP)
                 .initialChips(request.initialChips())
                 .build();
 
@@ -125,7 +125,7 @@ public class RoomService {
         }
 
         room.setStatus(RoomStatus.PLAYING);
-        room.setPhase(RoomPhase.PRE_FLOP);
+        room.setPhase(BettingPhase.PRE_FLOP);
         room.setDealerSeat(1);
 
         RoomPlayer sbPlayer;
@@ -237,7 +237,11 @@ public class RoomService {
                 throw new RuntimeException("Acción no válida");
         }
 
-        moveToNextTurn(room);
+        boolean roundAdvanced = checkRoundCompletion(room);
+
+        if (!roundAdvanced) {
+            moveToNextTurn(room);
+        }
 
         roomRepository.save(room);
         potRepository.save(activePot);
@@ -272,6 +276,72 @@ public class RoomService {
 
         if (nextTurnSeat != -1) {
             room.setTurnSeat(nextTurnSeat);
+        }
+    }
+
+    private boolean checkRoundCompletion(Room room) {
+        List<RoomPlayer> orderedPlayers = roomPlayerRepository.findByRoomIdOrderBySeatNumberAsc(room.getId());
+        List<RoomPlayer> activePlayers = orderedPlayers.stream()
+                .filter(p -> Boolean.TRUE.equals(p.getInHand()))
+                .toList();
+
+        if (activePlayers.isEmpty()) return false;
+
+        boolean roundComplete = true;
+        for (RoomPlayer p : activePlayers) {
+            if (p.getCurrentBet() == null || p.getCurrentBet() < room.getHighestBet()) {
+                roundComplete = false;
+                break;
+            }
+        }
+
+        if (roundComplete) {
+            room.setPhase(getNextPhase(room.getPhase()));
+            room.setHighestBet(0);
+            
+            for (RoomPlayer p : orderedPlayers) {
+                p.setCurrentBet(0);
+                roomPlayerRepository.save(p);
+            }
+            
+            int dealerSeat = room.getDealerSeat();
+            int nextTurnSeat = -1;
+            
+            int dealerIndex = -1;
+            for (int i = 0; i < orderedPlayers.size(); i++) {
+                if (orderedPlayers.get(i).getSeatNumber().equals(dealerSeat)) {
+                    dealerIndex = i;
+                    break;
+                }
+            }
+            if (dealerIndex == -1) dealerIndex = 0;
+
+            for (int i = 1; i <= orderedPlayers.size(); i++) {
+                int indexToCheck = (dealerIndex + i) % orderedPlayers.size();
+                RoomPlayer p = orderedPlayers.get(indexToCheck);
+                if (Boolean.TRUE.equals(p.getInHand())) {
+                    nextTurnSeat = p.getSeatNumber();
+                    break;
+                }
+            }
+
+            if (nextTurnSeat != -1) {
+                room.setTurnSeat(nextTurnSeat);
+            }
+            
+            return true;
+        }
+        return false;
+    }
+
+    private BettingPhase getNextPhase(BettingPhase currentPhase) {
+        if (currentPhase == null) return BettingPhase.PRE_FLOP;
+        switch (currentPhase) {
+            case PRE_FLOP: return BettingPhase.FLOP;
+            case FLOP: return BettingPhase.TURN;
+            case TURN: return BettingPhase.RIVER;
+            case RIVER: return BettingPhase.SHOWDOWN;
+            default: return currentPhase;
         }
     }
 }

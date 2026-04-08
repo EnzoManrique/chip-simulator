@@ -3,7 +3,7 @@ package com.manrique.chipsimulator.model;
 import jakarta.persistence.*;
 import lombok.*;
 import com.manrique.chipsimulator.model.enums.RoomStatus;
-import com.manrique.chipsimulator.model.enums.RoomPhase;
+import com.manrique.chipsimulator.model.enums.BettingPhase;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,7 +31,7 @@ public class Room {
     @Enumerated(EnumType.STRING)
     @Column(name = "phase")
     @Builder.Default
-    private RoomPhase phase = RoomPhase.PRE_FLOP;
+    private BettingPhase phase = BettingPhase.PRE_FLOP;
 
     @Column(name = "initial_chips")
     @Builder.Default
