@@ -129,41 +129,8 @@ public class RoomService {
         room.setPhase(BettingPhase.PRE_FLOP);
         room.setDealerSeat(1);
 
-        RoomPlayer sbPlayer;
-        RoomPlayer bbPlayer;
-        int turnSeat;
+        initializeHand(room);
 
-        int numPlayers = players.size();
-        if (numPlayers == 2) {
-            sbPlayer = players.get(0); // dealer es SB en heads up
-            bbPlayer = players.get(1); // el otro es BB
-            turnSeat = 1; // Dealer (SB) actúa primero preflop
-        } else if (numPlayers == 3) {
-            sbPlayer = players.get(1);
-            bbPlayer = players.get(2);
-            turnSeat = 1; // UTG es el Dealer
-        } else {
-            sbPlayer = players.get(1);
-            bbPlayer = players.get(2);
-            turnSeat = 4; // UTG actúa primero
-        }
-
-        room.setTurnSeat(turnSeat);
-
-        int sbAmount = room.getSmallBlindAmount();
-        int bbAmount = sbAmount * 2;
-
-        sbPlayer.setChipsBalance(sbPlayer.getChipsBalance() - sbAmount);
-        sbPlayer.setCurrentBet(sbAmount);
-        
-        bbPlayer.setChipsBalance(bbPlayer.getChipsBalance() - bbAmount);
-        bbPlayer.setCurrentBet(bbAmount);
-
-        Pot mainPot = potRepository.save(Pot.builder().room(room).amount(sbAmount + bbAmount).build());
-        room.getPots().add(mainPot);
-        room.setHighestBet(bbAmount);
-
-        roomPlayerRepository.saveAll(players);
         Room savedRoom = roomRepository.save(room);
 
         return new RoomResponseDTO(
@@ -379,5 +346,117 @@ public class RoomService {
 
         room.getPots().clear();
         roomRepository.save(room);
+    }
+
+    private void initializeHand(Room room) {
+        List<RoomPlayer> orderedPlayers = roomPlayerRepository.findByRoomIdOrderBySeatNumberAsc(room.getId());
+        List<RoomPlayer> activePlayers = orderedPlayers.stream()
+                .filter(p -> Boolean.TRUE.equals(p.getInHand()))
+                .toList();
+
+        if (activePlayers.size() < 2) return;
+
+        int dealerSeat = room.getDealerSeat();
+        int dealerIndex = -1;
+        for (int i = 0; i < activePlayers.size(); i++) {
+            if (activePlayers.get(i).getSeatNumber().equals(dealerSeat)) {
+                dealerIndex = i;
+                break;
+            }
+        }
+        if (dealerIndex == -1) dealerIndex = 0;
+
+        RoomPlayer sbPlayer;
+        RoomPlayer bbPlayer;
+        int turnSeat;
+
+        int numPlayers = activePlayers.size();
+        if (numPlayers == 2) {
+            sbPlayer = activePlayers.get(dealerIndex);
+            bbPlayer = activePlayers.get((dealerIndex + 1) % numPlayers);
+            turnSeat = sbPlayer.getSeatNumber();
+        } else {
+            sbPlayer = activePlayers.get((dealerIndex + 1) % numPlayers);
+            bbPlayer = activePlayers.get((dealerIndex + 2) % numPlayers);
+            turnSeat = activePlayers.get((dealerIndex + 3) % numPlayers).getSeatNumber();
+        }
+
+        room.setTurnSeat(turnSeat);
+
+        int sbAmount = room.getSmallBlindAmount();
+        int bbAmount = sbAmount * 2;
+
+        sbPlayer.setChipsBalance(sbPlayer.getChipsBalance() - sbAmount);
+        sbPlayer.setCurrentBet(sbAmount);
+        
+        bbPlayer.setChipsBalance(bbPlayer.getChipsBalance() - bbAmount);
+        bbPlayer.setCurrentBet(bbAmount);
+
+        Pot mainPot = potRepository.save(Pot.builder().room(room).amount(sbAmount + bbAmount).build());
+        room.getPots().add(mainPot);
+        mainPot.getEligiblePlayers().add(sbPlayer);
+        mainPot.getEligiblePlayers().add(bbPlayer);
+        room.setHighestBet(bbAmount);
+
+        roomPlayerRepository.saveAll(activePlayers);
+    }
+
+    @Transactional
+    public void startNextHand(String roomCode) {
+        Room room = roomRepository.findByCode(roomCode)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        if (room.getStatus() != RoomStatus.PLAYING) {
+            throw new RuntimeException("La partida no está en curso");
+        }
+        
+        if (room.getPhase() != BettingPhase.SHOWDOWN && !room.getPots().isEmpty()) {
+            throw new RuntimeException("La mano anterior aún no ha terminado");
+        }
+
+        List<RoomPlayer> orderedPlayers = roomPlayerRepository.findByRoomIdOrderBySeatNumberAsc(room.getId());
+        for (RoomPlayer player : orderedPlayers) {
+            if (player.getChipsBalance() > 0) {
+                player.setInHand(true);
+            } else {
+                player.setInHand(false);
+            }
+        }
+
+        List<RoomPlayer> activePlayers = orderedPlayers.stream()
+                .filter(p -> Boolean.TRUE.equals(p.getInHand()))
+                .toList();
+
+        if (activePlayers.size() >= 2) {
+            int currentDealerSeat = room.getDealerSeat();
+            int dealerIndex = -1;
+            for (int i = 0; i < orderedPlayers.size(); i++) {
+                if (orderedPlayers.get(i).getSeatNumber().equals(currentDealerSeat)) {
+                    dealerIndex = i;
+                    break;
+                }
+            }
+            if (dealerIndex == -1) dealerIndex = 0;
+
+            int nextDealerSeat = -1;
+            for (int i = 1; i <= orderedPlayers.size(); i++) {
+                int indexToCheck = (dealerIndex + i) % orderedPlayers.size();
+                RoomPlayer p = orderedPlayers.get(indexToCheck);
+                if (Boolean.TRUE.equals(p.getInHand())) {
+                    nextDealerSeat = p.getSeatNumber();
+                    break;
+                }
+            }
+            if (nextDealerSeat != -1) {
+                room.setDealerSeat(nextDealerSeat);
+            }
+        }
+
+        room.setPhase(BettingPhase.PRE_FLOP);
+
+        initializeHand(room);
+
+        roomRepository.save(room);
+        roomPlayerRepository.saveAll(orderedPlayers);
     }
 }

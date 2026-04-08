@@ -60,4 +60,10 @@ public class RoomController {
         roomService.endHand(code, request);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/{code}/next-hand")
+    public ResponseEntity<Void> startNextHand(@PathVariable String code) {
+        roomService.startNextHand(code);
+        return ResponseEntity.ok().build();
+    }
 }
