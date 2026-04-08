@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import com.manrique.chipsimulator.service.RoomService;
 import com.manrique.chipsimulator.dto.JoinRoomRequestDTO;
 import com.manrique.chipsimulator.dto.RoomPlayerResponseDTO;
+import com.manrique.chipsimulator.dto.PlayerActionRequestDTO;
 
 @RestController
 @RequestMapping("/api/rooms")
@@ -45,5 +46,11 @@ public class RoomController {
     public ResponseEntity<RoomResponseDTO> startGame(@PathVariable String code) {
         RoomResponseDTO response = roomService.startGame(code);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{code}/action/{username}")
+    public ResponseEntity<Void> processAction(@PathVariable String code, @PathVariable String username, @Valid @RequestBody PlayerActionRequestDTO request) {
+        roomService.processAction(code, username, request);
+        return ResponseEntity.ok().build();
     }
 }

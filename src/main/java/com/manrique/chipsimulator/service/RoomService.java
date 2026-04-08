@@ -7,11 +7,14 @@ import com.manrique.chipsimulator.dto.RoomPlayerResponseDTO;
 import com.manrique.chipsimulator.model.Room;
 import com.manrique.chipsimulator.model.User;
 import com.manrique.chipsimulator.model.RoomPlayer;
+import com.manrique.chipsimulator.model.Pot;
 import com.manrique.chipsimulator.model.enums.RoomPhase;
 import com.manrique.chipsimulator.model.enums.RoomStatus;
 import com.manrique.chipsimulator.repository.RoomRepository;
 import com.manrique.chipsimulator.repository.RoomPlayerRepository;
 import com.manrique.chipsimulator.repository.UserRepository;
+import com.manrique.chipsimulator.repository.PotRepository;
+import com.manrique.chipsimulator.dto.PlayerActionRequestDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,13 +27,15 @@ public class RoomService {
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
     private final RoomPlayerRepository roomPlayerRepository;
+    private final PotRepository potRepository;
     private static final String ALPHANUMERIC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final SecureRandom secureRandom = new SecureRandom();
 
-    public RoomService(RoomRepository roomRepository, UserRepository userRepository, RoomPlayerRepository roomPlayerRepository) {
+    public RoomService(RoomRepository roomRepository, UserRepository userRepository, RoomPlayerRepository roomPlayerRepository, PotRepository potRepository) {
         this.roomRepository = roomRepository;
         this.userRepository = userRepository;
         this.roomPlayerRepository = roomPlayerRepository;
+        this.potRepository = potRepository;
     }
 
     @Transactional
@@ -153,7 +158,8 @@ public class RoomService {
         bbPlayer.setChipsBalance(bbPlayer.getChipsBalance() - bbAmount);
         bbPlayer.setCurrentBet(bbAmount);
 
-        room.setPot(sbAmount + bbAmount);
+        Pot mainPot = potRepository.save(Pot.builder().room(room).amount(sbAmount + bbAmount).build());
+        room.getPots().add(mainPot);
         room.setHighestBet(bbAmount);
 
         roomPlayerRepository.saveAll(players);
@@ -164,5 +170,108 @@ public class RoomService {
                 savedRoom.getInitialChips(),
                 savedRoom.getStatus().name(),
                 savedRoom.getPhase().name());
+    }
+
+    @Transactional
+    public void processAction(String roomCode, String username, PlayerActionRequestDTO request) {
+        Room room = roomRepository.findByCode(roomCode)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        if (room.getStatus() != RoomStatus.PLAYING) {
+            throw new RuntimeException("La partida no está en curso");
+        }
+
+        RoomPlayer player = room.getPlayers().stream()
+                .filter(p -> p.getUser().getUsername().equals(username))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Jugador no encontrado en la sala"));
+
+        if (!Boolean.TRUE.equals(player.getInHand())) {
+            throw new RuntimeException("El jugador no está en la mano actual");
+        }
+
+        if (!room.getTurnSeat().equals(player.getSeatNumber())) {
+            throw new RuntimeException("No es tu turno");
+        }
+
+        List<Pot> pots = room.getPots();
+        Pot activePot;
+        if (pots.isEmpty()) {
+            activePot = Pot.builder().room(room).amount(0).build();
+            activePot = potRepository.save(activePot);
+            room.getPots().add(activePot);
+        } else {
+            activePot = pots.get(pots.size() - 1);
+        }
+
+        switch (request.action()) {
+            case FOLD:
+                player.setInHand(false);
+                break;
+            case CHECK:
+                // No descuenta saldo
+                break;
+            case CALL:
+                int callAmountToPay = room.getHighestBet() - player.getCurrentBet();
+                player.setChipsBalance(player.getChipsBalance() - callAmountToPay);
+                activePot.setAmount(activePot.getAmount() + callAmountToPay);
+                player.setCurrentBet(room.getHighestBet());
+                if (!activePot.getEligiblePlayers().contains(player)) {
+                    activePot.getEligiblePlayers().add(player);
+                }
+                break;
+            case RAISE:
+                if (request.amount() == null || request.amount() <= room.getHighestBet()) {
+                    throw new RuntimeException("El monto a subir debe ser mayor a la apuesta más alta");
+                }
+                int raiseAmountToPay = request.amount() - player.getCurrentBet();
+                player.setChipsBalance(player.getChipsBalance() - raiseAmountToPay);
+                activePot.setAmount(activePot.getAmount() + raiseAmountToPay);
+                room.setHighestBet(request.amount());
+                player.setCurrentBet(request.amount());
+                if (!activePot.getEligiblePlayers().contains(player)) {
+                    activePot.getEligiblePlayers().add(player);
+                }
+                break;
+            default:
+                throw new RuntimeException("Acción no válida");
+        }
+
+        moveToNextTurn(room);
+
+        roomRepository.save(room);
+        potRepository.save(activePot);
+        roomPlayerRepository.save(player);
+    }
+
+    private void moveToNextTurn(Room room) {
+        List<RoomPlayer> orderedPlayers = roomPlayerRepository.findByRoomIdOrderBySeatNumberAsc(room.getId());
+        if (orderedPlayers.isEmpty()) return;
+
+        int currentTurnSeat = room.getTurnSeat();
+        int nextTurnSeat = -1;
+
+        int currentIndex = -1;
+        for (int i = 0; i < orderedPlayers.size(); i++) {
+            if (orderedPlayers.get(i).getSeatNumber().equals(currentTurnSeat)) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        if (currentIndex == -1) currentIndex = 0;
+
+        for (int i = 1; i <= orderedPlayers.size(); i++) {
+            int indexToCheck = (currentIndex + i) % orderedPlayers.size();
+            RoomPlayer p = orderedPlayers.get(indexToCheck);
+            if (Boolean.TRUE.equals(p.getInHand())) {
+                nextTurnSeat = p.getSeatNumber();
+                break;
+            }
+        }
+
+        if (nextTurnSeat != -1) {
+            room.setTurnSeat(nextTurnSeat);
+        }
     }
 }
