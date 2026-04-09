@@ -12,7 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import com.manrique.chipsimulator.service.RoomService;
+import com.manrique.chipsimulator.service.RoomManagementService;
+import com.manrique.chipsimulator.service.GameOrchestratorService;
 import com.manrique.chipsimulator.dto.JoinRoomRequestDTO;
 import com.manrique.chipsimulator.dto.RoomPlayerResponseDTO;
 import com.manrique.chipsimulator.dto.PlayerActionRequestDTO;
@@ -23,47 +24,48 @@ import com.manrique.chipsimulator.dto.EndHandRequestDTO;
 @RequiredArgsConstructor
 public class RoomController {
 
-    private final RoomService roomService;
+    private final RoomManagementService roomManagementService;
+    private final GameOrchestratorService orchestratorService;
 
     @PostMapping
     public ResponseEntity<RoomResponseDTO> createRoom(@Valid @RequestBody RoomCreateRequestDTO request) {
-        RoomResponseDTO response = roomService.createRoom(request);
+        RoomResponseDTO response = roomManagementService.createRoom(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/{code}")
     public ResponseEntity<RoomResponseDTO> getRoomByCode(@PathVariable String code) {
-        RoomResponseDTO response = roomService.getRoomByCode(code);
+        RoomResponseDTO response = roomManagementService.getRoomByCode(code);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{code}/join")
     public ResponseEntity<RoomPlayerResponseDTO> joinRoom(@PathVariable String code, @Valid @RequestBody JoinRoomRequestDTO request) {
-        RoomPlayerResponseDTO response = roomService.joinRoom(code, request);
+        RoomPlayerResponseDTO response = roomManagementService.joinRoom(code, request);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{code}/start")
     public ResponseEntity<RoomResponseDTO> startGame(@PathVariable String code) {
-        RoomResponseDTO response = roomService.startGame(code);
+        RoomResponseDTO response = orchestratorService.startGame(code);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{code}/action/{username}")
     public ResponseEntity<Void> processAction(@PathVariable String code, @PathVariable String username, @Valid @RequestBody PlayerActionRequestDTO request) {
-        roomService.processAction(code, username, request);
+        orchestratorService.handlePlayerAction(code, username, request);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{code}/end-hand")
     public ResponseEntity<Void> endHand(@PathVariable String code, @Valid @RequestBody EndHandRequestDTO request) {
-        roomService.endHand(code, request);
+        orchestratorService.endHand(code, request);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{code}/next-hand")
     public ResponseEntity<Void> startNextHand(@PathVariable String code) {
-        roomService.startNextHand(code);
+        orchestratorService.startNextHand(code);
         return ResponseEntity.ok().build();
     }
 }
