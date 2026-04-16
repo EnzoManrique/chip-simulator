@@ -1,0 +1,14 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------------< com.manrique:chip-simulator >---------------------
+[INFO] Building  0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.0.5:run (default-cli) > test-compile @ chip-simulator >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ chip-simulator ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 0 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ chip-simulator ---

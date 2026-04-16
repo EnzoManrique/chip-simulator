@@ -22,9 +22,9 @@ public class User {
     private String username;
 
     @Column(name = "password_hash", nullable = false)
-    private String passwordHash;
+    private String password;
 
-    @Column(unique = true, length = 100)
+    @Column(unique = true, nullable = false, length = 100)
     private String email;
 
     @Column(name = "total_games")

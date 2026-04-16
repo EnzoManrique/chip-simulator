@@ -84,7 +84,7 @@ public class RoomManagementService {
                 .orElseGet(() -> {
                     User newUser = User.builder()
                             .username(request.username())
-                            .passwordHash("default_hash")
+                            .password("default_hash")
                             .build();
                     return userRepository.save(newUser);
                 });
