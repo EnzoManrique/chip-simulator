@@ -7,6 +7,7 @@ import com.manrique.chipsimulator.model.Pot;
 import com.manrique.chipsimulator.model.Room;
 import com.manrique.chipsimulator.model.RoomPlayer;
 import com.manrique.chipsimulator.model.enums.RoomStatus;
+import com.manrique.chipsimulator.model.enums.ActionType;
 import com.manrique.chipsimulator.repository.PotRepository;
 import com.manrique.chipsimulator.repository.RoomPlayerRepository;
 import com.manrique.chipsimulator.repository.RoomRepository;
@@ -60,11 +61,12 @@ public class GameOrchestratorService {
         Room savedRoom = roomRepository.save(room);
 
         notificationService.notifyRoomUpdate(savedRoom, "Juego iniciado");
+        String phaseName = savedRoom.getPhase() != null ? savedRoom.getPhase().name() : null;
         return new RoomResponseDTO(
                 savedRoom.getCode(),
                 savedRoom.getInitialChips(),
                 savedRoom.getStatus().name(),
-                savedRoom.getPhase().name());
+                phaseName);
     }
 
     @Transactional
@@ -93,6 +95,28 @@ public class GameOrchestratorService {
 
         bettingService.processAction(room, player, activePot, request);
 
+        // Verificar si solo queda 1 jugador (fold automático)
+        List<RoomPlayer> playersInHand = room.getPlayers().stream()
+                .filter(p -> Boolean.TRUE.equals(p.getInHand()))
+                .toList();
+
+        if (playersInHand.size() == 1) {
+            // Un solo jugador restante - gana automáticamente
+            RoomPlayer winner = playersInHand.get(0);
+            showdownService.endHandAuto(room, winner);
+            room.setStatus(RoomStatus.WAITING);
+            room.setPhase(null); // Resetear fase
+            room.setHighestBet(0);
+            room.setTurnSeat(room.getDealerSeat());
+            for (RoomPlayer p : room.getPlayers()) {
+                p.setCurrentBet(0);
+            }
+            roomRepository.save(room);
+            roomPlayerRepository.saveAll(room.getPlayers());
+            notificationService.notifyRoomUpdate(room, "Un jugador restante - winner: " + winner.getUser().getUsername());
+            return;
+        }
+
         List<RoomPlayer> orderedPlayers = roomPlayerRepository.findByRoomIdOrderBySeatNumberAsc(room.getId());
         boolean roundAdvanced = gameLifecycleService.checkRoundCompletion(room, orderedPlayers);
 
@@ -119,7 +143,16 @@ public class GameOrchestratorService {
         }
 
         showdownService.endHand(room, request);
-        
+
+        // Resetear room para próxima mano
+        room.setStatus(RoomStatus.WAITING);
+        room.setPhase(null);
+        room.setHighestBet(0);
+        room.setTurnSeat(room.getDealerSeat());
+        for (RoomPlayer p : room.getPlayers()) {
+            p.setCurrentBet(0);
+        }
+
         roomRepository.save(room);
         roomPlayerRepository.saveAll(room.getPlayers());
 

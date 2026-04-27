@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test WebSocket - Chip Simulator</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.2/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        #messages { background: #f0f0f0; padding: 10px; height: 400px; overflow-y: auto; margin-top: 10px; }
+        .message { margin: 5px 0; padding: 5px; border-bottom: 1px solid #ddd; }
+        input, button { padding: 8px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>🎲 Test WebSocket - Chip Simulator</h1>
+    
+    <div>
+        <label>Room Code:</label>
+        <input id="roomCode" value="TEST">
+        <button onclick="connect()">Conectar</button>
+        <button onclick="subscribe()">Suscribirse</button>
+    </div>
+
+    <h3>Mensajes recibidos:</h3>
+    <div id="messages"></div>
+
+    <script>
+        let stompClient = null;
+
+        function connect() {
+            const socket = new SockJS('http://localhost:8081/ws');
+            stompClient = Stomp.over(socket);
+            stompClient.connect({}, function(frame) {
+                log('✅ Conectado al WebSocket');
+            }, function(error) {
+                log('❌ Error: ' + error);
+            });
+        }
+
+        function subscribe() {
+            const roomCode = document.getElementById('roomCode').value;
+            if (!stompClient) {
+                alert('Primero connectate!');
+                return;
+            }
+            stompClient.subscribe('/topic/room/' + roomCode, function(message) {
+                log('📨 Update received:');
+                const data = JSON.parse(message.body);
+                log(JSON.stringify(data, null, 2));
+            });
+            log('📝 Suscrito a /topic/room/' + roomCode);
+        }
+
+        function log(msg) {
+            const div = document.getElementById('messages');
+            div.innerHTML = '<div class="message">' + msg + '</div>' + div.innerHTML;
+        }
+    </script>
+</body>
+</html>

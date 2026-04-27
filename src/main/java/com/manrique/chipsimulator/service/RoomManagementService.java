@@ -49,11 +49,12 @@ public class RoomManagementService {
 
         Room savedRoom = roomRepository.save(room);
 
+        String phaseName = savedRoom.getPhase() != null ? savedRoom.getPhase().name() : null;
         return new RoomResponseDTO(
                 savedRoom.getCode(),
                 savedRoom.getInitialChips(),
                 savedRoom.getStatus().name(),
-                savedRoom.getPhase().name());
+                phaseName);
     }
 
     private String generateCode(int length) {
@@ -68,11 +69,12 @@ public class RoomManagementService {
     public RoomResponseDTO getRoomByCode(String code) {
         Room room = roomRepository.findByCode(code)
                 .orElseThrow(() -> new RuntimeException("Room not found"));
+        String phaseName = room.getPhase() != null ? room.getPhase().name() : null;
         return new RoomResponseDTO(
                 room.getCode(),
                 room.getInitialChips(),
                 room.getStatus().name(),
-                room.getPhase().name());
+                phaseName);
     }
 
     @Transactional

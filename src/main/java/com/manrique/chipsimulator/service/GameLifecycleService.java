@@ -74,11 +74,12 @@ public class GameLifecycleService {
     }
 
     public void startNextHand(Room room, List<RoomPlayer> orderedPlayers) {
-        if (room.getStatus() != RoomStatus.PLAYING) {
+        if (room.getStatus() != RoomStatus.PLAYING && room.getStatus() != RoomStatus.WAITING) {
             throw new RuntimeException("La partida no está en curso");
         }
         
-        if (room.getPhase() != BettingPhase.SHOWDOWN && !room.getPots().isEmpty()) {
+        // Si hay pots sin resolver y no es SHOWDOWN, no puede iniciar nueva mano
+        if (room.getPhase() != BettingPhase.SHOWDOWN && room.getPhase() != null && !room.getPots().isEmpty()) {
             throw new RuntimeException("La mano anterior aún no ha terminado");
         }
 
@@ -120,6 +121,7 @@ public class GameLifecycleService {
         }
 
         room.setPhase(BettingPhase.PRE_FLOP);
+        room.setStatus(RoomStatus.PLAYING);
     }
 
     public boolean checkRoundCompletion(Room room, List<RoomPlayer> orderedPlayers) {

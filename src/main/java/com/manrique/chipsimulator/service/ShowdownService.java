@@ -37,4 +37,21 @@ public class ShowdownService {
         
         room.getPots().clear();
     }
+
+    /**
+     * Finaliza automáticamente la mano cuando solo queda 1 jugador.
+     * Le da todo el pozo a ese jugador.
+     */
+    public void endHandAuto(Room room, RoomPlayer winner) {
+        room.setPhase(BettingPhase.SHOWDOWN);
+
+        // Un solo winner - le da todo el pozo
+        for (Pot pot : room.getPots()) {
+            if (pot.getAmount() > 0) {
+                winner.setChipsBalance(winner.getChipsBalance() + pot.getAmount());
+            }
+        }
+
+        room.getPots().clear();
+    }
 }

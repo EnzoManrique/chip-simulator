@@ -57,11 +57,13 @@ public class WebSocketNotificationService {
                 ? room.getCurrentPlayer().getUser().getUsername()
                 : null;
 
+        String phaseName = room.getPhase() != null ? room.getPhase().name() : null;
+
         return new RoomUpdateDTO(
                 room.getCode(),
                 room.getInitialChips(),
                 room.getStatus().name(),
-                room.getPhase().name(),
+                phaseName,
                 players,
                 potDTO,
                 currentPlayerUsername,
