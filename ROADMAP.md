@@ -6,7 +6,7 @@ La idea es que un grupo de amigos reunidos físicamente usen sus celulares como 
 
 ## 📍 Estado Actual
 - **Fase en Progreso:** Fase 3 - Robustez y Reglas de Negocio Edge
-- **Objetivo Inmediato:** Manejo Global de Excepciones + Auto-Fold por desconexión
+- **Objetivo Inmediato:** Auto-Fold por desconexión de red
 
 ---
 
@@ -31,7 +31,7 @@ La idea es que un grupo de amigos reunidos físicamente usen sus celulares como 
 - [x] Agregar campo currentPlayer en Room
 
 ### ⏳ Fase 3: Robustez y Reglas de Negocio Edge
-- [ ] Manejo Global de Excepciones (@ControllerAdvice).
+- [x] Manejo Global de Excepciones (@ControllerAdvice).
 - [ ] Sistema de Auto-Fold por **desconexión de red** (No por límite de tiempo).
 
 ### ⏳ Fase 4: Frontend Mobile

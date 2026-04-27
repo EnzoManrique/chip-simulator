@@ -24,6 +24,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
+        logger.error("Runtime exception: ", ex);
+        Map<String, String> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        // Si el mensaje contiene "not found" -> 404, sino 500
+        HttpStatus status = ex.getMessage() != null && ex.getMessage().toLowerCase().contains("not found")
+                ? HttpStatus.NOT_FOUND
+                : HttpStatus.INTERNAL_SERVER_ERROR;
+        return ResponseEntity.status(status).body(error);
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, String>> handleBadCredentials(BadCredentialsException ex) {
         Map<String, String> error = new HashMap<>();
