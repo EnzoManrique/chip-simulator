@@ -44,4 +44,8 @@ public class RoomPlayer {
     @Column(name = "status")
     @Builder.Default
     private PlayerStatus status = PlayerStatus.ACTIVE;
+
+    @Column(name = "is_all_in")
+    @Builder.Default
+    private Boolean isAllIn = false;
 }

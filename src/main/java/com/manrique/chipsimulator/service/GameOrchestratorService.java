@@ -25,15 +25,18 @@ public class GameOrchestratorService {
     private final GameLifecycleService gameLifecycleService;
     private final BettingService bettingService;
     private final ShowdownService showdownService;
+    private final WebSocketNotificationService notificationService;
 
     public GameOrchestratorService(RoomRepository roomRepository, RoomPlayerRepository roomPlayerRepository, PotRepository potRepository,
-                                   GameLifecycleService gameLifecycleService, BettingService bettingService, ShowdownService showdownService) {
+                                   GameLifecycleService gameLifecycleService, BettingService bettingService, ShowdownService showdownService,
+                                   WebSocketNotificationService notificationService) {
         this.roomRepository = roomRepository;
         this.roomPlayerRepository = roomPlayerRepository;
         this.potRepository = potRepository;
         this.gameLifecycleService = gameLifecycleService;
         this.bettingService = bettingService;
         this.showdownService = showdownService;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -56,6 +59,7 @@ public class GameOrchestratorService {
         roomPlayerRepository.saveAll(orderedPlayers);
         Room savedRoom = roomRepository.save(room);
 
+        notificationService.notifyRoomUpdate(savedRoom, "Juego iniciado");
         return new RoomResponseDTO(
                 savedRoom.getCode(),
                 savedRoom.getInitialChips(),
@@ -101,6 +105,8 @@ public class GameOrchestratorService {
         roomRepository.save(room);
         potRepository.save(activePot);
         roomPlayerRepository.saveAll(orderedPlayers);
+
+        notificationService.notifyRoomUpdate(room, "Jugador actúa: " + player.getUser().getUsername());
     }
 
     @Transactional
@@ -116,6 +122,8 @@ public class GameOrchestratorService {
         
         roomRepository.save(room);
         roomPlayerRepository.saveAll(room.getPlayers());
+
+        notificationService.notifyRoomUpdate(room, "Mano terminada - winners: " + request.winnerUsernames());
     }
 
     @Transactional
@@ -137,5 +145,7 @@ public class GameOrchestratorService {
 
         roomRepository.save(room);
         roomPlayerRepository.saveAll(orderedPlayers);
+
+        notificationService.notifyRoomUpdate(room, "Nueva mano iniciada");
     }
 }

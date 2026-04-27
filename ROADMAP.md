@@ -5,8 +5,8 @@ Estamos construyendo el backend en Java (Spring Boot) para un **Simulador de Pó
 La idea es que un grupo de amigos reunidos físicamente usen sus celulares como **fichas virtuales** para apuestas, jugando con **cartas presenciales** (cada jugador tiene sus cartas en la mano). Por lo tanto, si el grupo no lleva un maletín con fichas físicas, pueden usar esta aplicación. La experiencia de usuario está adaptada a un entorno presencial (ej. no hay timers estrictos de turno, sino detección de desconexión).
 
 ## 📍 Estado Actual
-- **Fase en Progreso:** Fase 1 - Identidad y Seguridad (casi completa)
-- **Objetivo Inmediato:** Configurar Spring Security con SecurityFilterChain para rutas públicas en `/api/auth/**`
+- **Fase en Progreso:** Fase 3 - Robustez y Reglas de Negocio Edge
+- **Objetivo Inmediato:** Manejo Global de Excepciones + Auto-Fold por desconexión
 
 ---
 
@@ -17,20 +17,28 @@ La idea es que un grupo de amigos reunidos físicamente usen sus celulares como 
 - [x] Resolución de ganadores y Split Pots (Pozos divididos).
 - [x] Refactorización a Arquitectura Limpia (Implementación del Patrón Orquestador para evitar dependencias circulares).
 
-### 🚧 Fase 1: Identidad y Seguridad (CASI COMPLETA - falta SecurityFilterChain)
+### ✅ Fase 1: Identidad y Seguridad (COMPLETA)
 - [x] Crear Entidad `User` y `UserRepository`.
 - [x] Implementar `AuthService` y `AuthController`.
-- [ ] Configurar Spring Security y `BCryptPasswordEncoder`.
-- [ ] Configurar `SecurityFilterChain` (Rutas públicas para `/api/auth/**`).
+- [x] Configurar Spring Security y `BCryptPasswordEncoder`.
+- [x] Configurar `SecurityFilterChain` (Rutas públicas para `/api/auth/**`).
 
-### ⏳ Fase 2: Comunicación en Tiempo Real
-- [ ] Implementar WebSockets (STOMP) para actualizar la mesa en las pantallas sin recargar.
+### ✅ Fase 2: Comunicación en Tiempo Real (COMPLETA)
+- [x] Implementar WebSockets (STOMP) para actualizar la mesa en las pantallas sin recargar.
+- [x] Crear WebSocketConfig con STOMP
+- [x] Crear WebSocketNotificationService
+- [x] Integrar notificaciones en GameOrchestratorService
+- [x] Agregar campo currentPlayer en Room
 
 ### ⏳ Fase 3: Robustez y Reglas de Negocio Edge
 - [ ] Manejo Global de Excepciones (@ControllerAdvice).
 - [ ] Sistema de Auto-Fold por **desconexión de red** (No por límite de tiempo).
 
-### ⏳ Fase 4: Documentación
+### ⏳ Fase 4: Frontend Mobile
+- [ ] Integrar con frontend mobile (Android/iOS) para fichas virtuales.
+- [ ] Sincronización en tiempo real con WebSockets.
+
+### ⏳ Fase 5: Documentación
 - [ ] Integrar Swagger / OpenAPI para facilitar la futura creación del Frontend.
 
 ---
