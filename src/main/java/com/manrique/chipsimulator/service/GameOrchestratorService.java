@@ -8,6 +8,7 @@ import com.manrique.chipsimulator.model.Room;
 import com.manrique.chipsimulator.model.RoomPlayer;
 import com.manrique.chipsimulator.model.enums.RoomStatus;
 import com.manrique.chipsimulator.model.enums.ActionType;
+import com.manrique.chipsimulator.model.enums.BettingPhase;
 import com.manrique.chipsimulator.repository.PotRepository;
 import com.manrique.chipsimulator.repository.RoomPlayerRepository;
 import com.manrique.chipsimulator.repository.RoomRepository;
@@ -115,6 +116,18 @@ public class GameOrchestratorService {
             roomPlayerRepository.saveAll(room.getPlayers());
             notificationService.notifyRoomUpdate(room, "Un jugador restante - winner: " + winner.getUser().getUsername());
             return;
+        }
+
+        // Verificar si todos los jugadores restantes están all-in -> Ir a SHOWDOWN
+        List<RoomPlayer> playersCanBet = room.getPlayers().stream()
+                .filter(p -> Boolean.TRUE.equals(p.getInHand()) && !Boolean.TRUE.equals(p.getIsAllIn()))
+                .toList();
+
+        if (playersCanBet.isEmpty()) {
+            // Todos están all-in o fold --ir a SHOWDOWN
+            room.setPhase(BettingPhase.SHOWDOWN);
+            roomRepository.save(room);
+            notificationService.notifyRoomUpdate(room, "Todos all-in - SHOWDOWN");
         }
 
         List<RoomPlayer> orderedPlayers = roomPlayerRepository.findByRoomIdOrderBySeatNumberAsc(room.getId());

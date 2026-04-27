@@ -20,6 +20,12 @@ public class BettingService {
             throw new RuntimeException("No es tu turno");
         }
 
+        // Si el jugador ya está all-in, no puede actuar más - solo pasa su turno
+        if (Boolean.TRUE.equals(player.getIsAllIn())) {
+            // El jugador all-in no puede hacer nada, solo esperar
+            throw new RuntimeException("El jugador ya está all-in y no puede actuar más");
+        }
+
         switch (request.action()) {
             case FOLD:
                 player.setInHand(false);
@@ -34,6 +40,10 @@ public class BettingService {
                 if (!activePot.getEligiblePlayers().contains(player)) {
                     activePot.getEligiblePlayers().add(player);
                 }
+                // Si se quedó sin fichas, es all-in
+                if (player.getChipsBalance() <= 0) {
+                    player.setIsAllIn(true);
+                }
                 break;
             case RAISE:
                 if (request.amount() == null || request.amount() <= room.getHighestBet()) {
@@ -46,6 +56,10 @@ public class BettingService {
                 player.setCurrentBet(request.amount());
                 if (!activePot.getEligiblePlayers().contains(player)) {
                     activePot.getEligiblePlayers().add(player);
+                }
+                // Si se quedó sin fichas, es all-in
+                if (player.getChipsBalance() <= 0) {
+                    player.setIsAllIn(true);
                 }
                 break;
             default:
@@ -69,10 +83,11 @@ public class BettingService {
 
         if (currentIndex == -1) currentIndex = 0;
 
+        // Saltar al siguiente jugador que esté en la mano Y no esté all-in
         for (int i = 1; i <= orderedPlayers.size(); i++) {
             int indexToCheck = (currentIndex + i) % orderedPlayers.size();
             RoomPlayer p = orderedPlayers.get(indexToCheck);
-            if (Boolean.TRUE.equals(p.getInHand())) {
+            if (Boolean.TRUE.equals(p.getInHand()) && !Boolean.TRUE.equals(p.getIsAllIn())) {
                 nextTurnSeat = p.getSeatNumber();
                 break;
             }
