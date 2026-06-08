@@ -87,6 +87,36 @@ public class GameLifecycleService {
         mainPot.getEligiblePlayers().add(sbPlayer);
         mainPot.getEligiblePlayers().add(bbPlayer);
         room.setHighestBet(Math.max(sbActual, bbActual));
+
+        // Si el jugador del turno inicial está All-In, mover al siguiente que no lo esté
+        RoomPlayer initialTurnPlayer = activePlayers.stream()
+                .filter(p -> p.getSeatNumber().equals(room.getTurnSeat()))
+                .findFirst()
+                .orElse(null);
+
+        if (initialTurnPlayer != null && Boolean.TRUE.equals(initialTurnPlayer.getIsAllIn())) {
+            int currentIndex = activePlayers.indexOf(initialTurnPlayer);
+            int nextTurnSeat = -1;
+            for (int i = 1; i <= activePlayers.size(); i++) {
+                RoomPlayer p = activePlayers.get((currentIndex + i) % activePlayers.size());
+                if (!Boolean.TRUE.equals(p.getIsAllIn())) {
+                    nextTurnSeat = p.getSeatNumber();
+                    break;
+                }
+            }
+            if (nextTurnSeat != -1) {
+                room.setTurnSeat(nextTurnSeat);
+            }
+        }
+
+        // Si ya no quedan suficientes jugadores que puedan apostar (<= 1) y hay más de 1 en juego, ir a Showdown
+        List<RoomPlayer> playersCanBet = activePlayers.stream()
+                .filter(p -> !Boolean.TRUE.equals(p.getIsAllIn()))
+                .toList();
+
+        if (activePlayers.size() > 1 && playersCanBet.size() <= 1) {
+            room.setPhase(BettingPhase.SHOWDOWN);
+        }
     }
 
     public void startNextHand(Room room, List<RoomPlayer> orderedPlayers) {
@@ -161,7 +191,18 @@ public boolean checkRoundCompletion(Room room, List<RoomPlayer> orderedPlayers) 
         }
 
         // 3. Todo OK - avanzar fase
-        room.setPhase(getNextPhase(room.getPhase()));
+        List<RoomPlayer> playersCanBet = orderedPlayers.stream()
+                .filter(p -> Boolean.TRUE.equals(p.getInHand()) && !Boolean.TRUE.equals(p.getIsAllIn()))
+                .toList();
+        List<RoomPlayer> playersInHand = orderedPlayers.stream()
+                .filter(p -> Boolean.TRUE.equals(p.getInHand()))
+                .toList();
+
+        if (playersInHand.size() > 1 && playersCanBet.size() <= 1) {
+            room.setPhase(BettingPhase.SHOWDOWN);
+        } else {
+            room.setPhase(getNextPhase(room.getPhase()));
+        }
         room.setHighestBet(0);
 
         // 4. Determinar siguiente TurnSeat (el primer jugador activo después del dealer)

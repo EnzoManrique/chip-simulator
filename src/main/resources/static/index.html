@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Poker Chip Simulator - Test Client</title>
+    <!-- PWA Support -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0b0f19">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- SockJS and STOMP -->
@@ -562,9 +566,201 @@
             color: #f87171;
             border: 1px solid rgba(239, 68, 68, 0.3);
         }
+
+        /* Botón de Menú Hamburguesa flotante (oculto por defecto en desktop) */
+        .menu-toggle {
+            display: none;
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid var(--border-color);
+            color: white;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            font-size: 20px;
+            cursor: pointer;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px);
+            transition: all 0.2s ease;
+        }
+
+        .menu-toggle:hover {
+            background: rgba(17, 24, 39, 1);
+            border-color: var(--primary);
+        }
+
+        /* Overlay para cerrar el menú */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 9;
+        }
+
+        @media (max-width: 900px) {
+            .menu-toggle {
+                display: flex;
+            }
+
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                width: 300px;
+                transform: translateX(-100%);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.active {
+                display: block;
+            }
+
+            .game-area {
+                padding: 16px;
+                padding-top: 80px; /* Dejar espacio para el botón de menú */
+                width: 100vw;
+                height: 100vh;
+                justify-content: space-between;
+            }
+
+            .top-bar {
+                margin-bottom: 10px;
+                flex-wrap: wrap;
+                gap: 8px;
+                justify-content: flex-end; /* Mover el badge de sala y botones de admin a la derecha */
+            }
+
+            .room-badge {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+
+            /* Mesa de Póker Responsive */
+            .poker-table {
+                width: 95vw;
+                height: calc(95vw * (380 / 700));
+                max-width: 700px;
+                max-height: 380px;
+                border-width: 10px;
+                border-radius: 100px;
+                box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 8px 20px rgba(0,0,0,0.5);
+            }
+
+            .table-pot {
+                font-size: 13px;
+                padding: 4px 12px;
+            }
+
+            .table-phase {
+                font-size: 10px;
+                padding: 2px 8px;
+            }
+
+            /* Jugadores más compactos en móvil */
+            .player-node {
+                width: 82px;
+                padding: 6px 8px;
+                border-radius: 12px;
+            }
+
+            .player-name {
+                font-size: 10px;
+                max-width: 48px;
+            }
+
+            .player-chips {
+                font-size: 11px;
+                font-weight: 600;
+            }
+
+            .player-bet-badge {
+                font-size: 8px;
+                padding: 1px 4px;
+                margin-top: 2px;
+            }
+
+            .player-status-badge {
+                font-size: 7px;
+                padding: 0 4px;
+                margin-top: 2px;
+            }
+
+            .dealer-button {
+                width: 14px;
+                height: 14px;
+                font-size: 8px;
+                bottom: -4px;
+                right: -4px;
+            }
+
+            /* Barra de acciones adaptada para móviles */
+            .action-bar {
+                flex-direction: column;
+                padding: 12px;
+                gap: 10px;
+                margin-top: 10px;
+                border-radius: 16px;
+            }
+
+            .action-bar > div:first-child {
+                text-align: center;
+            }
+
+            .action-group {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .action-group .btn {
+                flex: 1;
+                min-width: 70px;
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+
+            .raise-input-wrapper {
+                flex: 1.5;
+                min-width: 110px;
+                justify-content: space-between;
+            }
+
+            .raise-input-wrapper .btn {
+                padding: 4px 8px;
+                font-size: 11px;
+                min-width: unset;
+                flex: unset;
+            }
+
+            .raise-input-wrapper input {
+                width: 50px;
+                padding: 4px;
+                font-size: 12px;
+            }
+        }
     </style>
 </head>
 <body>
+
+    <!-- Botón hamburguesa y overlay de menú lateral para móviles -->
+    <button class="menu-toggle" id="menuToggleBtn" onclick="toggleSidebar()">☰</button>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
     <div class="app-container">
         
@@ -1022,17 +1218,27 @@
             // Synchronize Actions Bar
             syncActionPanel(update);
 
-            // Control Admin (Host) Panel Visibility (Only for seatNumber 1)
+            // Control Admin (Host / Dealer) Panel Visibility
             const me = update.players.find(p => currentUser && p.username === currentUser.username);
-            const isHost = me && me.seatNumber === 1;
             const adminPanel = document.getElementById('adminActionsPanel');
             const startGameBtn = document.getElementById('startGameBtn');
             const endHandBtn = document.getElementById('endHandBtn');
             const nextHandBtn = document.getElementById('nextHandBtn');
 
-            if (isHost) {
+            const isLobby = !update.dealerSeat || update.dealerSeat === 0;
+            
+            let hasAdminPrivilege = false;
+            if (me) {
+                if (isLobby) {
+                    hasAdminPrivilege = me.seatNumber === 1;
+                } else {
+                    hasAdminPrivilege = me.seatNumber === update.dealerSeat;
+                }
+            }
+
+            if (hasAdminPrivilege) {
                 adminPanel.style.display = 'flex';
-                if (!update.dealerSeat || update.dealerSeat === 0) {
+                if (isLobby) {
                     // Lobby: solo iniciar partida
                     startGameBtn.style.display = 'block';
                     endHandBtn.style.display = 'none';
@@ -1148,6 +1354,25 @@
             } else {
                 bar.style.visibility = 'hidden';
             }
+        }
+
+        // PWA Sidebar toggle logic
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('active');
+            }
+        }
+
+        // Registrar Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker registrado con éxito:', reg.scope))
+                    .catch(err => console.error('Error al registrar Service Worker:', err));
+            });
         }
     </script>
 </body>
