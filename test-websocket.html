@@ -17,6 +17,8 @@
     <div>
         <label>Room Code:</label>
         <input id="roomCode" value="TEST">
+        <label>Username:</label>
+        <input id="username" value="Enzo">
         <button onclick="connect()">Conectar</button>
         <button onclick="subscribe()">Suscribirse</button>
     </div>
@@ -39,6 +41,7 @@
 
         function subscribe() {
             const roomCode = document.getElementById('roomCode').value;
+            const username = document.getElementById('username').value;
             if (!stompClient) {
                 alert('Primero connectate!');
                 return;
@@ -47,8 +50,8 @@
                 log('📨 Update received:');
                 const data = JSON.parse(message.body);
                 log(JSON.stringify(data, null, 2));
-            });
-            log('📝 Suscrito a /topic/room/' + roomCode);
+            }, { username: username });
+            log('📝 Suscrito a /topic/room/' + roomCode + ' como ' + username);
         }
 
         function log(msg) {

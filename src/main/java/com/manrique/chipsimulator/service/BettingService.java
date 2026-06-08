@@ -4,6 +4,7 @@ import com.manrique.chipsimulator.dto.PlayerActionRequestDTO;
 import com.manrique.chipsimulator.model.Pot;
 import com.manrique.chipsimulator.model.Room;
 import com.manrique.chipsimulator.model.RoomPlayer;
+import com.manrique.chipsimulator.model.enums.BettingPhase;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,6 +13,10 @@ import java.util.List;
 public class BettingService {
 
     public void processAction(Room room, RoomPlayer player, Pot activePot, PlayerActionRequestDTO request) {
+        if (room.getPhase() == BettingPhase.SHOWDOWN || room.getPhase() == null) {
+            throw new RuntimeException("La ronda de apuestas ha terminado");
+        }
+
         if (!Boolean.TRUE.equals(player.getInHand())) {
             throw new RuntimeException("El jugador no está en la mano actual");
         }
@@ -33,16 +38,21 @@ public class BettingService {
             case CHECK:
                 break;
             case CALL:
-                int callAmountToPay = room.getHighestBet() - (player.getCurrentBet() == null ? 0 : player.getCurrentBet());
+                int maxAvailable = player.getChipsBalance();
+                int callAmountNeeded = room.getHighestBet() - (player.getCurrentBet() == null ? 0 : player.getCurrentBet());
+                int callAmountToPay = Math.min(callAmountNeeded, maxAvailable);
+                
                 player.setChipsBalance(player.getChipsBalance() - callAmountToPay);
                 activePot.setAmount(activePot.getAmount() + callAmountToPay);
-                player.setCurrentBet(room.getHighestBet());
+                player.setCurrentBet((player.getCurrentBet() == null ? 0 : player.getCurrentBet()) + callAmountToPay);
+                
                 if (!activePot.getEligiblePlayers().contains(player)) {
                     activePot.getEligiblePlayers().add(player);
                 }
                 // Si se quedó sin fichas, es all-in
                 if (player.getChipsBalance() <= 0) {
                     player.setIsAllIn(true);
+                    player.setChipsBalance(0);
                 }
                 break;
             case RAISE:
@@ -50,6 +60,10 @@ public class BettingService {
                     throw new RuntimeException("El monto a subir debe ser mayor a la apuesta más alta");
                 }
                 int raiseAmountToPay = request.amount() - (player.getCurrentBet() == null ? 0 : player.getCurrentBet());
+                if (raiseAmountToPay > player.getChipsBalance()) {
+                    throw new RuntimeException("No tienes suficientes fichas para subir a esa cantidad");
+                }
+                
                 player.setChipsBalance(player.getChipsBalance() - raiseAmountToPay);
                 activePot.setAmount(activePot.getAmount() + raiseAmountToPay);
                 room.setHighestBet(request.amount());
@@ -60,11 +74,14 @@ public class BettingService {
                 // Si se quedó sin fichas, es all-in
                 if (player.getChipsBalance() <= 0) {
                     player.setIsAllIn(true);
+                    player.setChipsBalance(0);
                 }
                 break;
             default:
                 throw new RuntimeException("Acción no válida");
         }
+
+        player.setHasActed(true);
     }
 
     public void moveToNextTurn(Room room, List<RoomPlayer> orderedPlayers) {
@@ -101,6 +118,7 @@ public class BettingService {
     public void resetTemporaryBets(List<RoomPlayer> orderedPlayers) {
         for (RoomPlayer p : orderedPlayers) {
             p.setCurrentBet(0);
+            p.setHasActed(false);
         }
     }
 }

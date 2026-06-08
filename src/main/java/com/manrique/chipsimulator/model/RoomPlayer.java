@@ -48,4 +48,12 @@ public class RoomPlayer {
     @Column(name = "is_all_in")
     @Builder.Default
     private Boolean isAllIn = false;
+
+    @Column(name = "is_connected", nullable = false)
+    @Builder.Default
+    private Boolean isConnected = true;
+
+    @Column(name = "has_acted", nullable = false)
+    @Builder.Default
+    private Boolean hasActed = false;
 }

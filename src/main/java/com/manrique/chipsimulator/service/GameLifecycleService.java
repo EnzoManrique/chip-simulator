@@ -24,6 +24,12 @@ public class GameLifecycleService {
         room.setStatus(RoomStatus.PLAYING);
         room.setPhase(BettingPhase.PRE_FLOP);
         room.setDealerSeat(1);
+
+        for (RoomPlayer p : orderedPlayers) {
+            p.setHasActed(false);
+            p.setIsAllIn(false);
+            p.setCurrentBet(0);
+        }
     }
 
     public void initializeHand(Room room, List<RoomPlayer> activePlayers, Pot mainPot) {
@@ -59,18 +65,28 @@ public class GameLifecycleService {
         int sbAmount = room.getSmallBlindAmount();
         int bbAmount = sbAmount * 2;
 
-        sbPlayer.setChipsBalance(sbPlayer.getChipsBalance() - sbAmount);
-        sbPlayer.setCurrentBet(sbAmount);
+        int sbActual = Math.min(sbAmount, sbPlayer.getChipsBalance());
+        sbPlayer.setChipsBalance(sbPlayer.getChipsBalance() - sbActual);
+        sbPlayer.setCurrentBet(sbActual);
+        if (sbPlayer.getChipsBalance() <= 0) {
+            sbPlayer.setIsAllIn(true);
+            sbPlayer.setChipsBalance(0);
+        }
         
-        bbPlayer.setChipsBalance(bbPlayer.getChipsBalance() - bbAmount);
-        bbPlayer.setCurrentBet(bbAmount);
+        int bbActual = Math.min(bbAmount, bbPlayer.getChipsBalance());
+        bbPlayer.setChipsBalance(bbPlayer.getChipsBalance() - bbActual);
+        bbPlayer.setCurrentBet(bbActual);
+        if (bbPlayer.getChipsBalance() <= 0) {
+            bbPlayer.setIsAllIn(true);
+            bbPlayer.setChipsBalance(0);
+        }
 
         mainPot.setRoom(room);
-        mainPot.setAmount(sbAmount + bbAmount);
+        mainPot.setAmount(sbActual + bbActual);
         room.getPots().add(mainPot);
         mainPot.getEligiblePlayers().add(sbPlayer);
         mainPot.getEligiblePlayers().add(bbPlayer);
-        room.setHighestBet(bbAmount);
+        room.setHighestBet(Math.max(sbActual, bbActual));
     }
 
     public void startNextHand(Room room, List<RoomPlayer> orderedPlayers) {
@@ -89,6 +105,9 @@ public class GameLifecycleService {
             } else {
                 player.setInHand(false);
             }
+            player.setHasActed(false);
+            player.setIsAllIn(false);
+            player.setCurrentBet(0);
         }
 
         List<RoomPlayer> activePlayers = orderedPlayers.stream()
@@ -126,36 +145,19 @@ public class GameLifecycleService {
 
 public boolean checkRoundCompletion(Room room, List<RoomPlayer> orderedPlayers) {
         List<RoomPlayer> activePlayers = orderedPlayers.stream()
-                .filter(p -> Boolean.TRUE.equals(p.getInHand()))
+                .filter(p -> Boolean.TRUE.equals(p.getInHand()) && !Boolean.TRUE.equals(p.getIsAllIn()))
                 .toList();
 
         if (activePlayers.isEmpty()) return false;
 
-        // 1. Verificar que las apuestas estén equalizadas
+        // 1. Verificar que todos hayan actuado Y sus apuestas estén equalizadas
         for (RoomPlayer p : activePlayers) {
+            if (!Boolean.TRUE.equals(p.getHasActed())) {
+                return false; // Alguien aún no ha actuado
+            }
             if (p.getCurrentBet() == null || p.getCurrentBet() < room.getHighestBet()) {
                 return false; // Aún hay apuestas sin igualar
             }
-        }
-
-        // 2. Verificar que todos hayan actuado en esta ronda
-        // El turno debe haber pasado por todos los jugadores (turnIndex > dealerIndex)
-        int dealerSeat = room.getDealerSeat();
-        int currentTurn = room.getTurnSeat();
-
-        int dealerIndex = -1, turnIndex = -1;
-        for (int i = 0; i < orderedPlayers.size(); i++) {
-            if (orderedPlayers.get(i).getSeatNumber().equals(dealerSeat)) dealerIndex = i;
-            if (orderedPlayers.get(i).getSeatNumber().equals(currentTurn)) turnIndex = i;
-        }
-
-        // Si no encontramos, usar defecto
-        if (dealerIndex == -1) dealerIndex = 0;
-        if (turnIndex == -1) turnIndex = 0;
-
-        // Solo completar si turnIndex > dealerIndex (hemos pasado por todos)
-        if (turnIndex <= dealerIndex) {
-            return false;
         }
 
         // 3. Todo OK - avanzar fase
@@ -165,7 +167,7 @@ public boolean checkRoundCompletion(Room room, List<RoomPlayer> orderedPlayers) 
         // 4. Determinar siguiente TurnSeat (el primer jugador activo después del dealer)
         int nextDealerIndex = -1;
         for (int i = 0; i < orderedPlayers.size(); i++) {
-            if (orderedPlayers.get(i).getSeatNumber().equals(dealerSeat)) {
+            if (orderedPlayers.get(i).getSeatNumber().equals(room.getDealerSeat())) {
                 nextDealerIndex = i;
                 break;
             }
@@ -176,7 +178,7 @@ public boolean checkRoundCompletion(Room room, List<RoomPlayer> orderedPlayers) 
         for (int i = 1; i <= orderedPlayers.size(); i++) {
             int indexToCheck = (nextDealerIndex + i) % orderedPlayers.size();
             RoomPlayer p = orderedPlayers.get(indexToCheck);
-            if (Boolean.TRUE.equals(p.getInHand())) {
+            if (Boolean.TRUE.equals(p.getInHand()) && !Boolean.TRUE.equals(p.getIsAllIn())) {
                 nextTurnSeat = p.getSeatNumber();
                 break;
             }

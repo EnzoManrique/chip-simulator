@@ -40,7 +40,8 @@ public class WebSocketNotificationService {
                         p.getChipsBalance(),
                         p.getCurrentBet(),
                         p.getInHand(),
-                        p.getIsAllIn()
+                        p.getIsAllIn(),
+                        p.getIsConnected()
                 ))
                 .toList();
 
@@ -53,9 +54,11 @@ public class WebSocketNotificationService {
             potDTO = new RoomUpdateDTO.PotDTO(pot.getAmount(), eligible);
         }
 
-        String currentPlayerUsername = room.getCurrentPlayer() != null
-                ? room.getCurrentPlayer().getUser().getUsername()
-                : null;
+        String currentPlayerUsername = room.getPlayers().stream()
+                .filter(p -> p.getSeatNumber().equals(room.getTurnSeat()))
+                .map(p -> p.getUser().getUsername())
+                .findFirst()
+                .orElse(null);
 
         String phaseName = room.getPhase() != null ? room.getPhase().name() : null;
 
@@ -67,7 +70,8 @@ public class WebSocketNotificationService {
                 players,
                 potDTO,
                 currentPlayerUsername,
-                lastAction
+                lastAction,
+                room.getDealerSeat()
         );
     }
 }

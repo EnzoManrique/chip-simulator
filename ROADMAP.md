@@ -32,11 +32,12 @@ La idea es que un grupo de amigos reunidos físicamente usen sus celulares como 
 
 ### ⏳ Fase 3: Robustez y Reglas de Negocio Edge
 - [x] Manejo Global de Excepciones (@ControllerAdvice).
-- [ ] Sistema de Auto-Fold por **desconexión de red** (No por límite de tiempo).
+- [x] Sistema de Auto-Fold por **desconexión de red** (No por límite de tiempo).
 
-### ⏳ Fase 4: Frontend Mobile
-- [ ] Integrar con frontend mobile (Android/iOS) para fichas virtuales.
-- [ ] Sincronización en tiempo real con WebSockets.
+### ⏳ Fase 4: Frontend (Web Test Dashboard / Mobile Integration)
+- [x] Crear Dashboard Web estático (`index.html`) para pruebas interactivas de flujos.
+- [x] Sincronización en tiempo real de la mesa mediante WebSockets.
+- [ ] Integrar con frontend mobile nativo (Android/iOS).
 
 ### ⏳ Fase 5: Documentación
 - [ ] Integrar Swagger / OpenAPI para facilitar la futura creación del Frontend.
