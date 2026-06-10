@@ -5,12 +5,20 @@ import com.manrique.chipsimulator.model.Room;
 import com.manrique.chipsimulator.model.RoomPlayer;
 import com.manrique.chipsimulator.model.enums.BettingPhase;
 import com.manrique.chipsimulator.model.enums.RoomStatus;
+import com.manrique.chipsimulator.service.state.BettingPhaseState;
+import com.manrique.chipsimulator.service.state.BettingPhaseStateFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class GameLifecycleService {
+
+    private final BettingPhaseStateFactory stateFactory;
+
+    public GameLifecycleService(BettingPhaseStateFactory stateFactory) {
+        this.stateFactory = stateFactory;
+    }
 
     public void startGame(Room room, List<RoomPlayer> orderedPlayers) {
         if (room.getStatus() != RoomStatus.WAITING) {
@@ -190,56 +198,10 @@ public boolean checkRoundCompletion(Room room, List<RoomPlayer> orderedPlayers) 
             }
         }
 
-        // 3. Todo OK - avanzar fase
-        List<RoomPlayer> playersCanBet = orderedPlayers.stream()
-                .filter(p -> Boolean.TRUE.equals(p.getInHand()) && !Boolean.TRUE.equals(p.getIsAllIn()))
-                .toList();
-        List<RoomPlayer> playersInHand = orderedPlayers.stream()
-                .filter(p -> Boolean.TRUE.equals(p.getInHand()))
-                .toList();
-
-        if (playersInHand.size() > 1 && playersCanBet.size() <= 1) {
-            room.setPhase(BettingPhase.SHOWDOWN);
-        } else {
-            room.setPhase(getNextPhase(room.getPhase()));
-        }
-        room.setHighestBet(0);
-
-        // 4. Determinar siguiente TurnSeat (el primer jugador activo después del dealer)
-        int nextDealerIndex = -1;
-        for (int i = 0; i < orderedPlayers.size(); i++) {
-            if (orderedPlayers.get(i).getSeatNumber().equals(room.getDealerSeat())) {
-                nextDealerIndex = i;
-                break;
-            }
-        }
-        if (nextDealerIndex == -1) nextDealerIndex = 0;
-
-        int nextTurnSeat = -1;
-        for (int i = 1; i <= orderedPlayers.size(); i++) {
-            int indexToCheck = (nextDealerIndex + i) % orderedPlayers.size();
-            RoomPlayer p = orderedPlayers.get(indexToCheck);
-            if (Boolean.TRUE.equals(p.getInHand()) && !Boolean.TRUE.equals(p.getIsAllIn())) {
-                nextTurnSeat = p.getSeatNumber();
-                break;
-            }
-        }
-
-        if (nextTurnSeat != -1) {
-            room.setTurnSeat(nextTurnSeat);
-        }
+        // 3. Todo OK - avanzar fase usando el patrón State
+        BettingPhaseState currentState = stateFactory.getState(room.getPhase());
+        currentState.completeRound(room, orderedPlayers);
 
         return true;
-    }
-
-    public BettingPhase getNextPhase(BettingPhase currentPhase) {
-        if (currentPhase == null) return BettingPhase.PRE_FLOP;
-        switch (currentPhase) {
-            case PRE_FLOP: return BettingPhase.FLOP;
-            case FLOP: return BettingPhase.TURN;
-            case TURN: return BettingPhase.RIVER;
-            case RIVER: return BettingPhase.SHOWDOWN;
-            default: return currentPhase;
-        }
     }
 }
