@@ -5,12 +5,23 @@ import com.manrique.chipsimulator.model.Pot;
 import com.manrique.chipsimulator.model.Room;
 import com.manrique.chipsimulator.model.RoomPlayer;
 import com.manrique.chipsimulator.model.enums.BettingPhase;
+import com.manrique.chipsimulator.service.strategy.PotDistributionStrategy;
+import com.manrique.chipsimulator.service.strategy.SingleWinnerStrategy;
+import com.manrique.chipsimulator.service.strategy.SplitPotStrategy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class ShowdownService {
+
+    private final PotDistributionStrategy singleWinnerStrategy;
+    private final PotDistributionStrategy splitPotStrategy;
+
+    public ShowdownService(SingleWinnerStrategy singleWinnerStrategy, SplitPotStrategy splitPotStrategy) {
+        this.singleWinnerStrategy = singleWinnerStrategy;
+        this.splitPotStrategy = splitPotStrategy;
+    }
 
     public void endHand(Room room, EndHandRequestDTO request) {
         room.setPhase(BettingPhase.SHOWDOWN);
@@ -21,17 +32,8 @@ public class ShowdownService {
                     .toList();
 
             if (!eligibleWinners.isEmpty()) {
-                int splitAmount = pot.getAmount() / eligibleWinners.size();
-                int extraChips = pot.getAmount() % eligibleWinners.size();
-
-                for (int i = 0; i < eligibleWinners.size(); i++) {
-                    RoomPlayer winner = eligibleWinners.get(i);
-                    int amountToAdd = splitAmount;
-                    if (i == 0) {
-                        amountToAdd += extraChips;
-                    }
-                    winner.setChipsBalance(winner.getChipsBalance() + amountToAdd);
-                }
+                PotDistributionStrategy strategy = getStrategy(eligibleWinners.size());
+                strategy.distribute(pot, eligibleWinners);
             }
         }
         
@@ -40,18 +42,25 @@ public class ShowdownService {
 
     /**
      * Finaliza automáticamente la mano cuando solo queda 1 jugador.
-     * Le da todo el pozo a ese jugador.
+     * Le da todo el pozo a ese jugador utilizando la estrategia SingleWinnerStrategy.
      */
     public void endHandAuto(Room room, RoomPlayer winner) {
         room.setPhase(BettingPhase.SHOWDOWN);
 
-        // Un solo winner - le da todo el pozo
         for (Pot pot : room.getPots()) {
             if (pot.getAmount() > 0) {
-                winner.setChipsBalance(winner.getChipsBalance() + pot.getAmount());
+                singleWinnerStrategy.distribute(pot, List.of(winner));
             }
         }
 
         room.getPots().clear();
+    }
+
+    private PotDistributionStrategy getStrategy(int winnersCount) {
+        if (winnersCount == 1) {
+            return singleWinnerStrategy;
+        } else {
+            return splitPotStrategy;
+        }
     }
 }
