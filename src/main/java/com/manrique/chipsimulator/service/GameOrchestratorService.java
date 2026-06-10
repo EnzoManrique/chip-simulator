@@ -12,8 +12,10 @@ import com.manrique.chipsimulator.model.enums.BettingPhase;
 import com.manrique.chipsimulator.repository.PotRepository;
 import com.manrique.chipsimulator.repository.RoomPlayerRepository;
 import com.manrique.chipsimulator.repository.RoomRepository;
+import com.manrique.chipsimulator.service.observer.RoomUpdateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,18 +33,18 @@ public class GameOrchestratorService {
     private final GameLifecycleService gameLifecycleService;
     private final BettingService bettingService;
     private final ShowdownService showdownService;
-    private final WebSocketNotificationService notificationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public GameOrchestratorService(RoomRepository roomRepository, RoomPlayerRepository roomPlayerRepository, PotRepository potRepository,
                                    GameLifecycleService gameLifecycleService, BettingService bettingService, ShowdownService showdownService,
-                                   WebSocketNotificationService notificationService) {
+                                   ApplicationEventPublisher eventPublisher) {
         this.roomRepository = roomRepository;
         this.roomPlayerRepository = roomPlayerRepository;
         this.potRepository = potRepository;
         this.gameLifecycleService = gameLifecycleService;
         this.bettingService = bettingService;
         this.showdownService = showdownService;
-        this.notificationService = notificationService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -65,7 +67,7 @@ public class GameOrchestratorService {
         roomPlayerRepository.saveAll(orderedPlayers);
         Room savedRoom = roomRepository.save(room);
 
-        notificationService.notifyRoomUpdate(savedRoom, "Juego iniciado");
+        eventPublisher.publishEvent(new RoomUpdateEvent(savedRoom, "Juego iniciado"));
         
         checkAndProcessAutoFold(savedRoom);
 
@@ -121,7 +123,7 @@ public class GameOrchestratorService {
             }
             roomRepository.save(room);
             roomPlayerRepository.saveAll(room.getPlayers());
-            notificationService.notifyRoomUpdate(room, "Un jugador restante - winner: " + winner.getUser().getUsername());
+            eventPublisher.publishEvent(new RoomUpdateEvent(room, "Un jugador restante - winner: " + winner.getUser().getUsername()));
             return;
         }
 
@@ -134,7 +136,7 @@ public class GameOrchestratorService {
             // Todos están all-in o fold --ir a SHOWDOWN
             room.setPhase(BettingPhase.SHOWDOWN);
             roomRepository.save(room);
-            notificationService.notifyRoomUpdate(room, "Todos all-in - SHOWDOWN");
+            eventPublisher.publishEvent(new RoomUpdateEvent(room, "Todos all-in - SHOWDOWN"));
         }
 
         List<RoomPlayer> orderedPlayers = roomPlayerRepository.findByRoomIdOrderBySeatNumberAsc(room.getId());
@@ -150,7 +152,7 @@ public class GameOrchestratorService {
         potRepository.save(activePot);
         roomPlayerRepository.saveAll(orderedPlayers);
 
-        notificationService.notifyRoomUpdate(room, "Jugador actúa: " + player.getUser().getUsername());
+        eventPublisher.publishEvent(new RoomUpdateEvent(room, "Jugador actúa: " + player.getUser().getUsername()));
 
         checkAndProcessAutoFold(room);
     }
@@ -178,7 +180,7 @@ public class GameOrchestratorService {
         roomRepository.save(room);
         roomPlayerRepository.saveAll(room.getPlayers());
 
-        notificationService.notifyRoomUpdate(room, "Mano terminada - winners: " + request.winnerUsernames());
+        eventPublisher.publishEvent(new RoomUpdateEvent(room, "Mano terminada - winners: " + request.winnerUsernames()));
     }
 
     @Transactional
@@ -201,7 +203,7 @@ public class GameOrchestratorService {
         roomRepository.save(room);
         roomPlayerRepository.saveAll(orderedPlayers);
 
-        notificationService.notifyRoomUpdate(room, "Nueva mano iniciada");
+        eventPublisher.publishEvent(new RoomUpdateEvent(room, "Nueva mano iniciada"));
 
         checkAndProcessAutoFold(room);
     }
@@ -222,7 +224,7 @@ public class GameOrchestratorService {
             logger.info("Estado de conexión del jugador {} en la sala {} actualizado a: {}", username, roomCode, isConnected);
 
             // Notificar la actualización de conexión
-            notificationService.notifyRoomUpdate(room, "Conexión: " + username + " está " + (isConnected ? "conectado" : "desconectado"));
+            eventPublisher.publishEvent(new RoomUpdateEvent(room, "Conexión: " + username + " está " + (isConnected ? "conectado" : "desconectado")));
 
             // Si se desconectó y es su turno actual, procesar auto-fold
             if (!isConnected && room.getStatus() == RoomStatus.PLAYING && room.getTurnSeat().equals(player.getSeatNumber())) {
