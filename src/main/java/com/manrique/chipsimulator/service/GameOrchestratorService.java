@@ -33,17 +33,19 @@ public class GameOrchestratorService {
     private final GameLifecycleService gameLifecycleService;
     private final BettingService bettingService;
     private final ShowdownService showdownService;
+    private final PotService potService;
     private final ApplicationEventPublisher eventPublisher;
 
     public GameOrchestratorService(RoomRepository roomRepository, RoomPlayerRepository roomPlayerRepository, PotRepository potRepository,
                                    GameLifecycleService gameLifecycleService, BettingService bettingService, ShowdownService showdownService,
-                                   ApplicationEventPublisher eventPublisher) {
+                                   PotService potService, ApplicationEventPublisher eventPublisher) {
         this.roomRepository = roomRepository;
         this.roomPlayerRepository = roomPlayerRepository;
         this.potRepository = potRepository;
         this.gameLifecycleService = gameLifecycleService;
         this.bettingService = bettingService;
         this.showdownService = showdownService;
+        this.potService = potService;
         this.eventPublisher = eventPublisher;
     }
 
@@ -112,6 +114,7 @@ public class GameOrchestratorService {
 
         if (playersInHand.size() == 1) {
             // Un solo jugador restante - gana automáticamente
+            potService.collectBetsAndBuildPots(room, room.getPlayers());
             RoomPlayer winner = playersInHand.get(0);
             showdownService.endHandAuto(room, winner);
             room.setStatus(RoomStatus.WAITING);
@@ -134,6 +137,7 @@ public class GameOrchestratorService {
 
         if (playersCanBet.isEmpty()) {
             // Todos están all-in o fold --ir a SHOWDOWN
+            potService.collectBetsAndBuildPots(room, room.getPlayers());
             room.setPhase(BettingPhase.SHOWDOWN);
             roomRepository.save(room);
             eventPublisher.publishEvent(new RoomUpdateEvent(room, "Todos all-in - SHOWDOWN"));
@@ -143,6 +147,7 @@ public class GameOrchestratorService {
         boolean roundAdvanced = gameLifecycleService.checkRoundCompletion(room, orderedPlayers);
 
         if (roundAdvanced) {
+            potService.collectBetsAndBuildPots(room, orderedPlayers);
             bettingService.resetTemporaryBets(orderedPlayers);
         } else {
             bettingService.moveToNextTurn(room, orderedPlayers);

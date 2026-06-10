@@ -90,10 +90,14 @@ public class GameLifecycleService {
         }
 
         mainPot.setRoom(room);
-        mainPot.setAmount(sbActual + bbActual);
+        mainPot.setAmount(0);
+        if (mainPot.getEligiblePlayers() == null) {
+            mainPot.setEligiblePlayers(new java.util.ArrayList<>());
+        } else {
+            mainPot.getEligiblePlayers().clear();
+        }
+        mainPot.getEligiblePlayers().addAll(activePlayers);
         room.getPots().add(mainPot);
-        mainPot.getEligiblePlayers().add(sbPlayer);
-        mainPot.getEligiblePlayers().add(bbPlayer);
         room.setHighestBet(Math.max(sbActual, bbActual));
 
         // Si el jugador del turno inicial está All-In, mover al siguiente que no lo esté

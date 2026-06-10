@@ -34,6 +34,13 @@ public class BettingService {
         switch (request.action()) {
             case FOLD:
                 player.setInHand(false);
+                if (room.getPots() != null) {
+                    for (Pot pot : room.getPots()) {
+                        if (pot.getEligiblePlayers() != null) {
+                            pot.getEligiblePlayers().remove(player);
+                        }
+                    }
+                }
                 break;
             case CHECK:
                 break;
@@ -43,12 +50,8 @@ public class BettingService {
                 int callAmountToPay = Math.min(callAmountNeeded, maxAvailable);
                 
                 player.setChipsBalance(player.getChipsBalance() - callAmountToPay);
-                activePot.setAmount(activePot.getAmount() + callAmountToPay);
                 player.setCurrentBet((player.getCurrentBet() == null ? 0 : player.getCurrentBet()) + callAmountToPay);
                 
-                if (!activePot.getEligiblePlayers().contains(player)) {
-                    activePot.getEligiblePlayers().add(player);
-                }
                 // Si se quedó sin fichas, es all-in
                 if (player.getChipsBalance() <= 0) {
                     player.setIsAllIn(true);
@@ -65,12 +68,9 @@ public class BettingService {
                 }
                 
                 player.setChipsBalance(player.getChipsBalance() - raiseAmountToPay);
-                activePot.setAmount(activePot.getAmount() + raiseAmountToPay);
                 room.setHighestBet(request.amount());
                 player.setCurrentBet(request.amount());
-                if (!activePot.getEligiblePlayers().contains(player)) {
-                    activePot.getEligiblePlayers().add(player);
-                }
+                
                 // Si se quedó sin fichas, es all-in
                 if (player.getChipsBalance() <= 0) {
                     player.setIsAllIn(true);

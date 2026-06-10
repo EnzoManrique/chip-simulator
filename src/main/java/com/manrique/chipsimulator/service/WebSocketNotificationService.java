@@ -46,13 +46,23 @@ public class WebSocketNotificationService {
                 .toList();
 
         RoomUpdateDTO.PotDTO potDTO = null;
+        int totalPotAmount = room.getPots().stream().mapToInt(com.manrique.chipsimulator.model.Pot::getAmount).sum()
+                + room.getPlayers().stream().mapToInt(p -> p.getCurrentBet() != null ? p.getCurrentBet() : 0).sum();
+
+        List<String> eligible;
         if (!room.getPots().isEmpty()) {
-            var pot = room.getPots().get(room.getPots().size() - 1);
-            List<String> eligible = pot.getEligiblePlayers().stream()
+            eligible = room.getPots().stream()
+                    .flatMap(pot -> pot.getEligiblePlayers().stream())
+                    .map(p -> p.getUser().getUsername())
+                    .distinct()
+                    .toList();
+        } else {
+            eligible = room.getPlayers().stream()
+                    .filter(p -> Boolean.TRUE.equals(p.getInHand()))
                     .map(p -> p.getUser().getUsername())
                     .toList();
-            potDTO = new RoomUpdateDTO.PotDTO(pot.getAmount(), eligible);
         }
+        potDTO = new RoomUpdateDTO.PotDTO(totalPotAmount, eligible);
 
         String currentPlayerUsername = room.getPlayers().stream()
                 .filter(p -> p.getSeatNumber().equals(room.getTurnSeat()))
