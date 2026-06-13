@@ -1,4 +1,12 @@
 package com.manrique.chipsimulator.dto;
 
-public record RoomCreateRequestDTO(Integer initialChips) {
+import com.manrique.chipsimulator.model.enums.GameMode;
+
+public record RoomCreateRequestDTO(
+        Integer initialChips,
+        GameMode gameMode,
+        Integer maxRebuys,
+        Boolean blindsIncrease,
+        Integer handsToIncrease
+) {
 }

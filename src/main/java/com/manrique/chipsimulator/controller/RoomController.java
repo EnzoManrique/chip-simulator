@@ -68,4 +68,10 @@ public class RoomController {
         orchestratorService.startNextHand(code);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/{code}/rebuy/{username}")
+    public ResponseEntity<Void> processRebuy(@PathVariable String code, @PathVariable String username) {
+        roomManagementService.processRebuy(code, username);
+        return ResponseEntity.ok().build();
+    }
 }

@@ -11,7 +11,11 @@ public record RoomUpdateDTO(
         PotDTO mainPot,
         String currentPlayerUsername,
         String lastAction,
-        Integer dealerSeat
+        Integer dealerSeat,
+        String gameMode,
+        Integer maxRebuys,
+        Boolean blindsIncrease,
+        Integer handsToIncrease
 ) {
     public record PlayerDTO(
             String username,
@@ -20,7 +24,8 @@ public record RoomUpdateDTO(
             Integer currentBet,
             Boolean inHand,
             Boolean isAllIn,
-            Boolean isConnected
+            Boolean isConnected,
+            Integer rebuyCount
     ) {}
 
     public record PotDTO(

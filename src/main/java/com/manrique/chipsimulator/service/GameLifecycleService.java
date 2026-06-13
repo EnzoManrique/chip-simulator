@@ -5,6 +5,8 @@ import com.manrique.chipsimulator.model.Room;
 import com.manrique.chipsimulator.model.RoomPlayer;
 import com.manrique.chipsimulator.model.enums.BettingPhase;
 import com.manrique.chipsimulator.model.enums.RoomStatus;
+import com.manrique.chipsimulator.service.factory.GameModeFactory;
+import com.manrique.chipsimulator.service.factory.GameModeFactoryResolver;
 import com.manrique.chipsimulator.service.state.BettingPhaseState;
 import com.manrique.chipsimulator.service.state.BettingPhaseStateFactory;
 import org.springframework.stereotype.Service;
@@ -15,9 +17,11 @@ import java.util.List;
 public class GameLifecycleService {
 
     private final BettingPhaseStateFactory stateFactory;
+    private final GameModeFactoryResolver factoryResolver;
 
-    public GameLifecycleService(BettingPhaseStateFactory stateFactory) {
+    public GameLifecycleService(BettingPhaseStateFactory stateFactory, GameModeFactoryResolver factoryResolver) {
         this.stateFactory = stateFactory;
+        this.factoryResolver = factoryResolver;
     }
 
     public void startGame(Room room, List<RoomPlayer> orderedPlayers) {
@@ -183,6 +187,9 @@ public class GameLifecycleService {
 
         room.setPhase(BettingPhase.PRE_FLOP);
         room.setStatus(RoomStatus.PLAYING);
+
+        GameModeFactory factory = factoryResolver.getFactory(room.getGameMode());
+        factory.getBlindStructure().setupBlindsForNextHand(room);
     }
 
 public boolean checkRoundCompletion(Room room, List<RoomPlayer> orderedPlayers) {

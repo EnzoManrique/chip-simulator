@@ -37,6 +37,25 @@ public class Room {
     @Builder.Default
     private Integer initialChips = 1000;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "game_mode")
+    @Builder.Default
+    private com.manrique.chipsimulator.model.enums.GameMode gameMode = com.manrique.chipsimulator.model.enums.GameMode.CASH;
+
+    @Column(name = "hand_count")
+    @Builder.Default
+    private Integer handCount = 0;
+
+    @Column(name = "max_rebuys")
+    private Integer maxRebuys;
+
+    @Column(name = "blinds_increase")
+    @Builder.Default
+    private Boolean blindsIncrease = false;
+
+    @Column(name = "hands_to_increase")
+    private Integer handsToIncrease;
+
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @Builder.Default
     private List<Pot> pots = new ArrayList<>();

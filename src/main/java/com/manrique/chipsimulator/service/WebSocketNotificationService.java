@@ -41,7 +41,8 @@ public class WebSocketNotificationService {
                         p.getCurrentBet(),
                         p.getInHand(),
                         p.getIsAllIn(),
-                        p.getIsConnected()
+                        p.getIsConnected(),
+                        p.getRebuyCount()
                 ))
                 .toList();
 
@@ -81,7 +82,11 @@ public class WebSocketNotificationService {
                 potDTO,
                 currentPlayerUsername,
                 lastAction,
-                room.getDealerSeat()
+                room.getDealerSeat(),
+                room.getGameMode() != null ? room.getGameMode().name() : null,
+                room.getMaxRebuys(),
+                room.getBlindsIncrease(),
+                room.getHandsToIncrease()
         );
     }
 }

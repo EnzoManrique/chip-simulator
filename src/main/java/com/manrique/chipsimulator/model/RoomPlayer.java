@@ -56,4 +56,8 @@ public class RoomPlayer {
     @Column(name = "has_acted", nullable = false)
     @Builder.Default
     private Boolean hasActed = false;
+
+    @Column(name = "rebuy_count")
+    @Builder.Default
+    private Integer rebuyCount = 0;
 }

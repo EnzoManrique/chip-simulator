@@ -78,7 +78,12 @@ public class GameOrchestratorService {
                 savedRoom.getCode(),
                 savedRoom.getInitialChips(),
                 savedRoom.getStatus().name(),
-                phaseName);
+                phaseName,
+                savedRoom.getGameMode() != null ? savedRoom.getGameMode().name() : null,
+                savedRoom.getMaxRebuys(),
+                savedRoom.getBlindsIncrease(),
+                savedRoom.getHandsToIncrease()
+        );
     }
 
     @Transactional

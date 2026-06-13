@@ -4,5 +4,9 @@ public record RoomResponseDTO(
         String code,
         Integer initialChips,
         String status,
-        String phase
+        String phase,
+        String gameMode,
+        Integer maxRebuys,
+        Boolean blindsIncrease,
+        Integer handsToIncrease
 ) {}
