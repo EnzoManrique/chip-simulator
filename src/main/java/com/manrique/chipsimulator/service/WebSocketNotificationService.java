@@ -86,7 +86,8 @@ public class WebSocketNotificationService {
                 room.getGameMode() != null ? room.getGameMode().name() : null,
                 room.getMaxRebuys(),
                 room.getBlindsIncrease(),
-                room.getHandsToIncrease()
+                room.getHandsToIncrease(),
+                room.getSmallBlindAmount()
         );
     }
 }

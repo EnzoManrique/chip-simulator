@@ -58,9 +58,15 @@
             <!-- User Session State -->
             <div class="panel-card" id="userStatePanel" style="display: none;">
                 <div class="panel-title">Mi Cuenta</div>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                     <span id="loggedInUserLabel" style="font-weight: 600; font-size: 16px;">Invitado</span>
                     <button class="btn btn-outline btn-danger" style="padding: 4px 10px; font-size: 11px;" onclick="handleLogout()">Cerrar Sesión</button>
+                </div>
+                <div id="rebuyContainer" style="margin-top: 10px; display: none; width: 100%;">
+                    <button class="btn btn-accent" style="width: 100%; height: 38px; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="requestRebuy()">
+                        <span class="material-icons" style="font-size: 18px;">add_circle</span>
+                        Recomprar Fichas
+                    </button>
                 </div>
             </div>
 
@@ -78,6 +84,31 @@
                 <div class="input-group" style="margin-top: 4px;">
                     <label>Fichas Iniciales (solo para Crear)</label>
                     <input type="number" id="initialChipsInput" value="1000">
+                </div>
+                <div class="input-group" style="margin-top: 4px;">
+                    <label>Modalidad de Juego</label>
+                    <select id="gameModeInput" onchange="onGameModeChange()" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; color: white; font-size: 14px; outline: none; cursor: pointer;">
+                        <option value="CASH">Cash Game</option>
+                        <option value="TOURNAMENT">Torneo</option>
+                    </select>
+                </div>
+                <button type="button" class="advanced-toggle-btn" onclick="toggleAdvancedConfig()" style="margin-top: 6px;">
+                    <span class="material-icons" id="advancedToggleIcon" style="font-size: 16px;">expand_more</span>
+                    Opciones Avanzadas
+                </button>
+                <div class="advanced-config-panel" id="advancedRoomConfig" style="display: none; margin-top: 6px;">
+                    <div class="input-group">
+                        <label>Límite de Recompras (vacío = ilimitado)</label>
+                        <input type="number" id="maxRebuysInput" placeholder="Ej: 1" min="0">
+                    </div>
+                    <div class="checkbox-group" style="margin-top: 6px; margin-bottom: 6px;">
+                        <input type="checkbox" id="blindsIncreaseInput" onchange="toggleBlindsHandsConfig()">
+                        <label for="blindsIncreaseInput">¿Las ciegas aumentan?</label>
+                    </div>
+                    <div class="input-group" id="handsToIncreaseWrapper" style="display: none;">
+                        <label>Aumentar ciegas cada (manos)</label>
+                        <input type="number" id="handsToIncreaseInput" placeholder="Ej: 3" min="1" value="3">
+                    </div>
                 </div>
             </div>
 
@@ -121,6 +152,7 @@
                     <div class="table-center-info">
                         <div class="table-pot" id="potDisplay">Pozo: $0</div>
                         <div class="table-phase" id="phaseDisplay">Esperando inicio...</div>
+                        <div class="table-blinds" id="blindsDisplay" style="display: none;">Ciegas: $10/$20</div>
                     </div>
 
                     <!-- Dynamic Player Nodes (will be rendered by JS) -->

@@ -15,7 +15,8 @@ public record RoomUpdateDTO(
         String gameMode,
         Integer maxRebuys,
         Boolean blindsIncrease,
-        Integer handsToIncrease
+        Integer handsToIncrease,
+        Integer smallBlindAmount
 ) {
     public record PlayerDTO(
             String username,

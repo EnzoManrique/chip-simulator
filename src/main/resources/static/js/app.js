@@ -73,6 +73,40 @@ function handleRaiseClick() {
     }
 }
 
+// Opciones avanzadas de la sala
+function toggleAdvancedConfig() {
+    const configPanel = document.getElementById('advancedRoomConfig');
+    const toggleIcon = document.getElementById('advancedToggleIcon');
+    if (configPanel.style.display === 'none' || !configPanel.style.display) {
+        configPanel.style.display = 'flex';
+        toggleIcon.innerText = 'expand_less';
+    } else {
+        configPanel.style.display = 'none';
+        toggleIcon.innerText = 'expand_more';
+    }
+}
+
+function toggleBlindsHandsConfig() {
+    const isChecked = document.getElementById('blindsIncreaseInput').checked;
+    const wrapper = document.getElementById('handsToIncreaseWrapper');
+    wrapper.style.display = isChecked ? 'flex' : 'none';
+}
+
+function onGameModeChange() {
+    const mode = document.getElementById('gameModeInput').value;
+    const maxRebuysInput = document.getElementById('maxRebuysInput');
+    const blindsIncreaseInput = document.getElementById('blindsIncreaseInput');
+    
+    if (mode === 'CASH') {
+        maxRebuysInput.value = '';
+        blindsIncreaseInput.checked = false;
+    } else { // TOURNAMENT
+        maxRebuysInput.value = '1';
+        blindsIncreaseInput.checked = true;
+    }
+    toggleBlindsHandsConfig();
+}
+
 function closeOrientationModal() {
     document.getElementById('orientationModal').style.display = 'none';
 }
@@ -196,8 +230,21 @@ function showAuthBanner(msg, type) {
 // Room management Rest APIs
 async function createRoom() {
     const initialChips = parseInt(document.getElementById('initialChipsInput').value) || 1000;
+    const gameMode = document.getElementById('gameModeInput').value;
+    const maxRebuysVal = document.getElementById('maxRebuysInput').value.trim();
+    const maxRebuys = maxRebuysVal === "" ? null : parseInt(maxRebuysVal);
+    const blindsIncrease = document.getElementById('blindsIncreaseInput').checked;
+    const handsToIncreaseVal = document.getElementById('handsToIncreaseInput').value.trim();
+    const handsToIncrease = handsToIncreaseVal === "" ? null : parseInt(handsToIncreaseVal);
+
     try {
-        const data = await apiCall('/api/rooms', 'POST', { initialChips });
+        const data = await apiCall('/api/rooms', 'POST', { 
+            initialChips,
+            gameMode,
+            maxRebuys,
+            blindsIncrease,
+            handsToIncrease
+        });
         log(`Sala creada con código: ${data.code}`, 'success');
         document.getElementById('roomCodeInput').value = data.code;
         await joinRoom(data.code);
@@ -357,8 +404,21 @@ function handleRoomUpdate(update) {
     document.getElementById('potDisplay').innerText = `Pozo: $${update.mainPot ? update.mainPot.amount : 0}`;
     document.getElementById('phaseDisplay').innerText = update.phase ? update.phase : update.status;
 
+    // Render blinds if active
+    const blindsDisplay = document.getElementById('blindsDisplay');
+    if (update.smallBlindAmount) {
+        blindsDisplay.style.display = 'block';
+        const modeLabel = update.gameMode === 'TOURNAMENT' ? 'Torneo' : 'Cash';
+        blindsDisplay.innerText = `${modeLabel} - Ciegas: $${update.smallBlindAmount}/$${update.smallBlindAmount * 2}`;
+    } else {
+        blindsDisplay.style.display = 'none';
+    }
+
     // Render Player seats
     renderPlayers(update.players, update.currentPlayerUsername);
+
+    // Update Rebuy visibility
+    updateRebuyButton(update);
 
     // Synchronize Actions Bar
     syncActionPanel(update);
@@ -443,6 +503,9 @@ function renderPlayers(players, currentTurnUsername) {
         const isMe = (currentUser && p.username === currentUser.username);
         const nameStyle = isMe ? 'color: var(--accent); font-weight: 700;' : '';
 
+        // Mostrar número de recompras
+        const rebuyIndicator = p.rebuyCount > 0 ? ` <span style="font-size:10px;color:var(--text-secondary);font-weight:normal;">[R:${p.rebuyCount}]</span>` : '';
+
         // If this player is dealer, add dealer chip.
         const isDealer = (roomState && roomState.dealerSeat && p.seatNumber === roomState.dealerSeat);
         const dealerBtnHtml = isDealer ? '<div class="dealer-button" title="Dealer Button">D</div>' : '';
@@ -452,7 +515,7 @@ function renderPlayers(players, currentTurnUsername) {
 
         node.innerHTML = `
             <div class="player-node-header">
-                <span class="player-name" style="${nameStyle}" title="${p.username}">${p.username}</span>
+                <span class="player-name" style="${nameStyle}" title="${p.username}">${p.username}${rebuyIndicator}</span>
                 <span class="connection-status ${connClass}" title="${connTitle}"></span>
             </div>
             <div class="player-chips">$${p.chips}</div>
@@ -554,6 +617,55 @@ function syncActionPanel(update) {
         bar.style.visibility = 'hidden';
         document.getElementById('raiseSliderContainer').style.display = 'none';
     }
+}
+
+async function requestRebuy() {
+    if (!activeRoomCode || !currentUser) return;
+    try {
+        log(`Solicitando recompra de fichas...`);
+        await apiCall(`/api/rooms/${activeRoomCode}/rebuy/${currentUser.username}`, 'POST');
+        log(`¡Recompra realizada con éxito!`, 'success');
+    } catch (err) {
+        log(`Error al recomprar: ${err.message}`, 'error');
+        alert(`Error al recomprar: ${err.message}`);
+    }
+}
+
+function updateRebuyButton(update) {
+    const rebuyContainer = document.getElementById('rebuyContainer');
+    if (!currentUser || !update.players || !update.gameMode) {
+        rebuyContainer.style.display = 'none';
+        return;
+    }
+    const me = update.players.find(p => p.username === currentUser.username);
+    if (!me) {
+        rebuyContainer.style.display = 'none';
+        return;
+    }
+
+    // No permitir recompras si no ha iniciado el juego (todavía en lobby / dealer no asignado)
+    if (!update.dealerSeat || update.dealerSeat === 0) {
+        rebuyContainer.style.display = 'none';
+        return;
+    }
+
+    let isEligible = false;
+    const isCash = update.gameMode === 'CASH';
+
+    if (isCash) {
+        // En Cash: puede recomprar si no está jugando la mano activa en esta ronda
+        const notInActiveHand = !me.inHand || update.status !== 'PLAYING';
+        const hasRebuysLeft = update.maxRebuys == null || me.rebuyCount < update.maxRebuys;
+        isEligible = notInActiveHand && hasRebuysLeft;
+    } else { // TOURNAMENT
+        // En Torneo: solo si se quedó sin fichas (chips <= 0) Y la ciega pequeña es <= 40 Y quedan recompras
+        const hasNoChips = me.chips <= 0;
+        const inEarlyPhase = update.smallBlindAmount != null && update.smallBlindAmount <= 40;
+        const hasRebuysLeft = update.maxRebuys == null || me.rebuyCount < update.maxRebuys;
+        isEligible = hasNoChips && inEarlyPhase && hasRebuysLeft;
+    }
+
+    rebuyContainer.style.display = isEligible ? 'block' : 'none';
 }
 
 // PWA Sidebar toggle logic
