@@ -62,7 +62,7 @@ public class GameOrchestratorService {
                 .filter(p -> Boolean.TRUE.equals(p.getInHand()))
                 .toList();
 
-        Pot mainPot = new Pot();
+        Pot mainPot = Pot.builder().room(room).amount(0).build();
         mainPot = potRepository.save(mainPot);
         gameLifecycleService.initializeHand(room, activePlayers, mainPot);
 
@@ -206,7 +206,7 @@ public class GameOrchestratorService {
                 .filter(p -> Boolean.TRUE.equals(p.getInHand()))
                 .toList();
 
-        Pot mainPot = new Pot();
+        Pot mainPot = Pot.builder().room(room).amount(0).build();
         mainPot = potRepository.save(mainPot);
         gameLifecycleService.initializeHand(room, activePlayers, mainPot);
 
