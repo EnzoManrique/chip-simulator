@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poker Chip Simulator - Test Client</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Poker Chip Simulator</title>
     <!-- PWA Support -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0b0f19">
@@ -21,26 +21,25 @@
 </head>
 <body>
 
-    <!-- Overlay de menú lateral para móviles -->
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-
-    <div class="app-container">
-        
-        <!-- Sidebar Panel -->
-        <div class="sidebar">
-            <div class="logo-container">
+    <!-- PANTALLA 1: AUTENTICACIÓN (Auth) -->
+    <div id="screen-auth" class="screen-container">
+        <div class="auth-card">
+            <div class="logo-container" style="justify-content: center; margin-bottom: 24px;">
                 <span class="logo-icon">🎲</span>
                 <span class="logo-text">PokerSim UI</span>
             </div>
+            
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Iniciar Sesión</button>
+                <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Registrarse</button>
+            </div>
 
-            <!-- Auth Panel -->
-            <div class="panel-card" id="authPanel">
-                <div class="panel-title">Identificación de Usuario</div>
+            <div class="panel-card" style="border: none; background: transparent; padding: 0;">
                 <div class="input-group">
                     <label>Nombre de Usuario</label>
                     <input type="text" id="usernameInput" placeholder="Ej: Enzo">
                 </div>
-                <div class="input-group">
+                <div class="input-group" id="emailInputGroup" style="display: none;">
                     <label>Email (para Registro)</label>
                     <input type="email" id="emailInput" placeholder="Ej: enzo@poker.com">
                 </div>
@@ -48,60 +47,72 @@
                     <label>Contraseña</label>
                     <input type="password" id="passwordInput" placeholder="******">
                 </div>
-                <div style="display: flex; gap: 8px; margin-top: 4px;">
-                    <button class="btn" style="flex: 1;" onclick="handleLogin()">Login</button>
-                    <button class="btn btn-outline" style="flex: 1;" onclick="handleRegister()">Registrar</button>
+                <div style="margin-top: 20px;">
+                    <button class="btn" style="width: 100%; height: 44px;" id="authSubmitBtn" onclick="handleAuthSubmit()">Entrar</button>
                 </div>
-                <div id="authStatusBanner" class="status-banner" style="display: none;"></div>
+                <div id="authStatusBanner" class="status-banner" style="display: none; margin-top: 12px;"></div>
             </div>
+        </div>
+    </div>
 
-            <!-- User Session State -->
-            <div class="panel-card" id="userStatePanel" style="display: none;">
-                <div class="panel-title">Mi Cuenta</div>
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                    <span id="loggedInUserLabel" style="font-weight: 600; font-size: 16px;">Invitado</span>
-                    <button class="btn btn-outline btn-danger" style="padding: 4px 10px; font-size: 11px;" onclick="handleLogout()">Cerrar Sesión</button>
-                </div>
-                <div id="rebuyContainer" style="margin-top: 10px; display: none; width: 100%;">
-                    <button class="btn btn-accent" style="width: 100%; height: 38px; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="requestRebuy()">
-                        <span class="material-icons" style="font-size: 18px;">add_circle</span>
-                        Recomprar Fichas
-                    </button>
-                </div>
+    <!-- PANTALLA 2: LOBBY (Crear / Unirse) -->
+    <div id="screen-lobby" class="screen-container" style="display: none;">
+        <div class="lobby-header">
+            <div class="logo-container">
+                <span class="logo-icon">🎲</span>
+                <span class="logo-text">PokerSim UI</span>
             </div>
+            <div class="lobby-user-info">
+                <span id="loggedInUserLabel">Invitado</span>
+                <button class="btn btn-outline btn-danger" style="padding: 6px 12px; font-size: 12px; height: 32px;" onclick="handleLogout()">Cerrar Sesión</button>
+            </div>
+        </div>
 
-            <!-- Room Configuration Panel -->
-            <div class="panel-card" id="roomPanel" style="display: none;">
-                <div class="panel-title">Mesa / Sala</div>
-                <div class="input-group">
+        <div class="lobby-content">
+            <!-- Unirse a Sala Card -->
+            <div class="lobby-card">
+                <div class="lobby-card-title">
+                    <span class="material-icons">group_add</span>
+                    Unirse a una Sala
+                </div>
+                <div class="input-group" style="margin-top: 10px;">
                     <label>Código de Sala</label>
-                    <input type="text" id="roomCodeInput" placeholder="Ej: ABCD" style="text-transform: uppercase;">
+                    <input type="text" id="roomCodeInput" placeholder="Ej: ABCD" style="text-transform: uppercase; font-size: 18px; text-align: center; letter-spacing: 2px;">
                 </div>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-outline" style="flex: 1;" onclick="joinRoom()">Unirse</button>
-                    <button class="btn" style="flex: 1;" onclick="createRoom()">Crear Nueva</button>
+                <button class="btn btn-accent" style="width: 100%; margin-top: 20px; height: 44px;" onclick="joinRoom()">
+                    Unirse a la Sala
+                </button>
+            </div>
+
+            <!-- Crear Sala Card -->
+            <div class="lobby-card">
+                <div class="lobby-card-title">
+                    <span class="material-icons">add_box</span>
+                    Crear una Sala
                 </div>
-                <div class="input-group" style="margin-top: 4px;">
-                    <label>Fichas Iniciales (solo para Crear)</label>
-                    <input type="number" id="initialChipsInput" value="1000">
+                <div class="input-group" style="margin-top: 10px;">
+                    <label>Fichas Iniciales</label>
+                    <input type="number" id="initialChipsInput" value="1000" min="100">
                 </div>
-                <div class="input-group" style="margin-top: 4px;">
+                <div class="input-group" style="margin-top: 10px;">
                     <label>Modalidad de Juego</label>
-                    <select id="gameModeInput" onchange="onGameModeChange()" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 12px; color: white; font-size: 14px; outline: none; cursor: pointer;">
+                    <select id="gameModeInput" onchange="onGameModeChange()">
                         <option value="CASH">Cash Game</option>
                         <option value="TOURNAMENT">Torneo</option>
                     </select>
                 </div>
-                <button type="button" class="advanced-toggle-btn" onclick="toggleAdvancedConfig()" style="margin-top: 6px;">
+                
+                <button type="button" class="advanced-toggle-btn" onclick="toggleAdvancedConfig()" style="margin-top: 16px;">
                     <span class="material-icons" id="advancedToggleIcon" style="font-size: 16px;">expand_more</span>
                     Opciones Avanzadas
                 </button>
-                <div class="advanced-config-panel" id="advancedRoomConfig" style="display: none; margin-top: 6px;">
+                
+                <div class="advanced-config-panel" id="advancedRoomConfig" style="display: none; margin-top: 10px;">
                     <div class="input-group">
                         <label>Límite de Recompras (vacío = ilimitado)</label>
                         <input type="number" id="maxRebuysInput" placeholder="Ej: 1" min="0">
                     </div>
-                    <div class="checkbox-group" style="margin-top: 6px; margin-bottom: 6px;">
+                    <div class="checkbox-group" style="margin-top: 10px; margin-bottom: 6px;">
                         <input type="checkbox" id="blindsIncreaseInput" onchange="toggleBlindsHandsConfig()">
                         <label for="blindsIncreaseInput">¿Las ciegas aumentan?</label>
                     </div>
@@ -110,41 +121,54 @@
                         <input type="number" id="handsToIncreaseInput" placeholder="Ej: 3" min="1" value="3">
                     </div>
                 </div>
+
+                <button class="btn" style="width: 100%; margin-top: 20px; height: 44px;" onclick="createRoom()">
+                    Crear Nueva Sala
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANTALLA 3: MESA DE JUEGO (Game) -->
+    <div id="screen-game" class="screen-container" style="display: none;">
+        <!-- Game Header -->
+        <div class="game-header">
+            <button class="btn btn-outline btn-danger" style="padding: 6px 12px; font-size: 12px; height: 36px; display: flex; align-items: center; gap: 4px;" onclick="leaveRoom()">
+                <span class="material-icons" style="font-size: 16px;">arrow_back</span>
+                <span class="btn-text">Salir</span>
+            </button>
+
+            <div class="room-badge" id="activeRoomBadge">
+                <span>Sala:</span>
+                <span class="room-code-display" id="roomCodeBadge">----</span>
+                <span class="connection-status online" id="wsConnStatus" title="WebSocket Conectado"></span>
             </div>
 
-            <!-- Log Panel -->
-            <div class="console-panel">
-                <div class="panel-title">Consola de Eventos</div>
-                <div class="console-log" id="logConsole">
-                    <div class="log-entry"><span class="log-timestamp">[00:00:00]</span> Esperando identificación...</div>
+            <!-- Admin/Host Controls -->
+            <div class="game-admin-controls" id="adminActionsPanel" style="display: none;">
+                <button class="btn btn-accent" id="startGameBtn" style="padding: 6px 12px; font-size: 12px; height: 36px;" onclick="startGame()">Iniciar</button>
+                <button class="btn" id="endHandBtn" style="padding: 6px 12px; font-size: 12px; height: 36px;" onclick="openEndHandModal()">Terminar Mano</button>
+                <button class="btn btn-accent" id="nextHandBtn" style="padding: 6px 12px; font-size: 12px; height: 36px;" onclick="startNextHand()">Siguiente</button>
+            </div>
+
+            <!-- Actions and Console -->
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <!-- Rebuy Button inside Game Screen (shows contextually) -->
+                <div id="rebuyContainer" style="display: none;">
+                    <button class="btn btn-accent" style="padding: 6px 10px; font-size: 12px; height: 36px;" onclick="requestRebuy()" title="Recomprar Fichas">
+                        <span class="material-icons" style="font-size: 16px;">add_circle</span>
+                        <span>Recomprar</span>
+                    </button>
                 </div>
+                <button class="btn btn-outline" style="padding: 6px 12px; font-size: 12px; height: 36px; display: flex; align-items: center; gap: 4px;" onclick="toggleConsoleDrawer()">
+                    <span class="material-icons" style="font-size: 16px;">list_alt</span>
+                    <span class="btn-text">Consola</span>
+                </button>
             </div>
         </div>
 
-        <!-- Main Game Area -->
+        <!-- Game Area Content -->
         <div class="game-area">
-            
-            <!-- Top Action Header -->
-            <div class="top-bar">
-                <div class="top-bar-header">
-                    <!-- Botón de Menú Hamburguesa para móviles -->
-                    <button class="menu-toggle" id="menuToggleBtn" onclick="toggleSidebar()">☰</button>
-                    
-                    <div class="room-badge" id="activeRoomBadge" style="visibility: hidden;">
-                        <span>Sala:</span>
-                        <span class="room-code-display" id="roomCodeBadge">----</span>
-                        <span class="connection-status online" id="wsConnStatus" title="WebSocket Conectado"></span>
-                    </div>
-                </div>
-
-                <!-- Admin Action Buttons -->
-                <div class="action-group" id="adminActionsPanel" style="display: none;">
-                    <button class="btn btn-outline btn-accent" id="startGameBtn" onclick="startGame()">Iniciar Partida</button>
-                    <button class="btn btn-outline" id="endHandBtn" onclick="openEndHandModal()">Terminar Mano</button>
-                    <button class="btn btn-outline" id="nextHandBtn" onclick="startNextHand()">Siguiente Mano</button>
-                </div>
-            </div>
-
             <!-- Poker Table Wrapper -->
             <div class="table-wrapper">
                 <div class="poker-table">
@@ -201,9 +225,19 @@
                     <input type="range" id="raiseSlider" class="raise-range-input" oninput="syncRaiseAmountFromSlider(this.value)">
                 </div>
             </div>
-
         </div>
 
+        <!-- Sliding Console Logs Drawer -->
+        <div class="console-drawer" id="consoleDrawer">
+            <div class="console-drawer-header">
+                <span>Historial de Eventos</span>
+                <button class="console-drawer-close" onclick="toggleConsoleDrawer()">✕</button>
+            </div>
+            <div class="console-log" id="logConsole">
+                <div class="log-entry"><span class="log-timestamp">[00:00:00]</span> Esperando identificación...</div>
+            </div>
+        </div>
+        <div class="console-drawer-overlay" id="consoleDrawerOverlay" onclick="toggleConsoleDrawer()"></div>
     </div>
 
     <!-- Winners Checkbox Dialog Modal -->

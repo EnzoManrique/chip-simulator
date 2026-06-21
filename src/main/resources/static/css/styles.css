@@ -27,7 +27,9 @@ body {
     background-image: radial-gradient(circle at 50% 50%, #111827 0%, #030712 100%);
     min-height: 100vh;
     display: flex;
-    overflow-x: hidden;
+    overflow: hidden;
+    touch-action: pan-x pan-y;
+    overscroll-behavior-y: contain;
 }
 
 /* Layout */
@@ -35,6 +37,18 @@ body {
     display: flex;
     width: 100vw;
     height: 100vh;
+    overflow: hidden;
+}
+
+.screen-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    padding: 0;
+    margin: 0;
 }
 
 /* Sidebar Control Panel */
@@ -1221,4 +1235,251 @@ input:focus {
 .checkbox-group input {
     cursor: pointer;
     accent-color: var(--primary);
+}
+
+/* --- NUEVAS CLASES PARA EL REDISEÑO DE TRES PANTALLAS --- */
+
+/* Pantalla 1: Auth */
+#screen-auth {
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle at 50% 50%, #111827 0%, #030712 100%);
+    padding: 20px;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 400px;
+    background: rgba(17, 24, 39, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-color);
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.auth-tabs {
+    display: flex;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.auth-tab {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.auth-tab.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+/* Pantalla 2: Lobby */
+#screen-lobby {
+    background: radial-gradient(circle at 50% 50%, #111827 0%, #030712 100%);
+    overflow-y: auto;
+}
+
+.lobby-header {
+    height: 70px;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(17, 24, 39, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.lobby-user-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+#loggedInUserLabel {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.lobby-content {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 32px;
+    padding: 40px 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.lobby-card {
+    flex: 1;
+    background: rgba(17, 24, 39, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 380px;
+}
+
+.lobby-card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 12px;
+}
+
+.lobby-card-title .material-icons {
+    color: var(--primary);
+}
+
+/* Pantalla 3: Game */
+#screen-game {
+    background: radial-gradient(circle at 50% 50%, #111827 0%, #030712 100%);
+    display: flex;
+    flex-direction: column;
+}
+
+.game-header {
+    height: 64px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(17, 24, 39, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 5;
+}
+
+.game-admin-controls {
+    display: flex;
+    gap: 8px;
+}
+
+/* Consola Flotante (Drawer) */
+.console-drawer {
+    position: fixed;
+    top: 0;
+    right: -360px;
+    width: 360px;
+    height: 100vh;
+    background: rgba(11, 15, 25, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-left: 1px solid var(--border-color);
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.console-drawer.active {
+    right: 0;
+}
+
+.console-drawer-header {
+    height: 64px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+.console-drawer-close {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.2s;
+}
+
+.console-drawer-close:hover {
+    color: var(--danger);
+}
+
+.console-drawer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.console-drawer-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.console-drawer .console-log {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* Ajustes responsivos para pantallas pequeñas */
+@media (max-width: 768px) {
+    .lobby-content {
+        flex-direction: column;
+        gap: 24px;
+        padding: 24px 16px;
+    }
+    .lobby-card {
+        width: 100%;
+        min-height: auto;
+    }
+    .console-drawer {
+        width: 100%;
+        right: -100%;
+    }
 }

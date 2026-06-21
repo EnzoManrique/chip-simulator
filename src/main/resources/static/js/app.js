@@ -5,6 +5,53 @@ let roomState = null; // Last received room update
 let stompClient = null;
 let socket = null;
 
+// --- NUEVA LÓGICA DE NAVEGACIÓN Y TABS ---
+let activeAuthMode = 'login'; // 'login' o 'register'
+
+function navigateToScreen(screenId) {
+    // Escondemos todas las pantallas
+    document.getElementById('screen-auth').style.display = 'none';
+    document.getElementById('screen-lobby').style.display = 'none';
+    document.getElementById('screen-game').style.display = 'none';
+    
+    // Mostramos la pantalla objetivo
+    if (screenId === 'auth') {
+        document.getElementById('screen-auth').style.display = 'flex';
+    } else if (screenId === 'lobby') {
+        document.getElementById('screen-lobby').style.display = 'block';
+    } else if (screenId === 'game') {
+        document.getElementById('screen-game').style.display = 'flex';
+    }
+}
+
+function switchAuthTab(mode) {
+    activeAuthMode = mode;
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    const emailInputGroup = document.getElementById('emailInputGroup');
+    const authSubmitBtn = document.getElementById('authSubmitBtn');
+    
+    if (mode === 'login') {
+        tabLogin.classList.add('active');
+        tabRegister.classList.remove('active');
+        emailInputGroup.style.display = 'none';
+        authSubmitBtn.innerText = 'Entrar';
+    } else {
+        tabRegister.classList.add('active');
+        tabLogin.classList.remove('active');
+        emailInputGroup.style.display = 'flex';
+        authSubmitBtn.innerText = 'Registrarse';
+    }
+}
+
+function handleAuthSubmit() {
+    if (activeAuthMode === 'login') {
+        handleLogin();
+    } else {
+        handleRegister();
+    }
+}
+
 // Position nodes radially around the 700x380 oval table
 // Coordinate mapping based on seat number (1 to 8)
 const seatCoords = {
@@ -177,7 +224,6 @@ async function handleLogin() {
     }
 
     try {
-        // El campo identifier en LoginRequestDTO acepta username o email
         const data = await apiCall('/api/auth/login', 'POST', { identifier: username, password });
         log(`Inicio de sesión exitoso: ${data.username}`, 'success');
         loginUserSuccess(data);
@@ -189,12 +235,8 @@ async function handleLogin() {
 
 function loginUserSuccess(user) {
     currentUser = user;
-    document.getElementById('authPanel').style.display = 'none';
-    document.getElementById('userStatePanel').style.display = 'flex';
     document.getElementById('loggedInUserLabel').innerText = user.username;
-    document.getElementById('roomPanel').style.display = 'flex';
-    
-    // Auto fill username for join requests
+    navigateToScreen('lobby');
     log(`Hola ${user.username}, ya puedes unirte o crear salas.`);
 }
 
@@ -204,17 +246,15 @@ function handleLogout() {
     activeRoomCode = null;
     roomState = null;
 
-    document.getElementById('authPanel').style.display = 'flex';
-    document.getElementById('userStatePanel').style.display = 'none';
-    document.getElementById('roomPanel').style.display = 'none';
-    document.getElementById('activeRoomBadge').style.visibility = 'hidden';
-    document.getElementById('adminActionsPanel').style.display = 'none';
-    document.getElementById('playerActionsBar').style.visibility = 'hidden';
+    navigateToScreen('auth');
     
     // Clean table representation
     document.getElementById('playerSeatsContainer').innerHTML = '';
     document.getElementById('potDisplay').innerText = 'Pozo: $0';
     document.getElementById('phaseDisplay').innerText = 'Esperando inicio...';
+    document.getElementById('blindsDisplay').style.display = 'none';
+    document.getElementById('adminActionsPanel').style.display = 'none';
+    document.getElementById('playerActionsBar').style.visibility = 'hidden';
 
     log('Sesión cerrada.');
 }
@@ -267,11 +307,13 @@ async function joinRoom(code = null) {
         
         activeRoomCode = roomCode;
         document.getElementById('roomCodeBadge').innerText = roomCode;
-        document.getElementById('activeRoomBadge').style.visibility = 'visible';
         document.getElementById('adminActionsPanel').style.display = 'flex';
 
         // Connect WebSocket
         connectWebSocket(roomCode);
+
+        // Cambiar a pantalla de juego
+        navigateToScreen('game');
 
         // Mostrar modal de recomendación de orientación en móviles
         if (window.innerWidth <= 950) {
@@ -668,14 +710,32 @@ function updateRebuyButton(update) {
     rebuyContainer.style.display = isEligible ? 'block' : 'none';
 }
 
-// PWA Sidebar toggle logic
-function toggleSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    const overlay = document.querySelector('.sidebar-overlay');
-    if (sidebar && overlay) {
-        sidebar.classList.toggle('active');
+// Drawer toggle logic for logs
+function toggleConsoleDrawer() {
+    const drawer = document.getElementById('consoleDrawer');
+    const overlay = document.getElementById('consoleDrawerOverlay');
+    if (drawer && overlay) {
+        drawer.classList.toggle('active');
         overlay.classList.toggle('active');
     }
+}
+
+// Exit Room Handler
+function leaveRoom() {
+    disconnectWebSocket();
+    activeRoomCode = null;
+    roomState = null;
+    
+    // Resetear UI de la mesa
+    document.getElementById('playerSeatsContainer').innerHTML = '';
+    document.getElementById('potDisplay').innerText = 'Pozo: $0';
+    document.getElementById('phaseDisplay').innerText = 'Esperando inicio...';
+    document.getElementById('blindsDisplay').style.display = 'none';
+    document.getElementById('adminActionsPanel').style.display = 'none';
+    document.getElementById('playerActionsBar').style.visibility = 'hidden';
+    
+    log('Saliste de la sala.');
+    navigateToScreen('lobby');
 }
 
 function disconnectWebSocket() {
