@@ -77,14 +77,14 @@ const mobileSeatCoords = {
 };
 
 const landscapeSeatCoords = {
-    1: { top: '86%', left: '50%' },   // Abajo Centro
-    2: { top: '78%', left: '24%' },   // Abajo Izquierda
-    3: { top: '50%', left: '9%' },    // Medio Izquierda
-    4: { top: '22%', left: '24%' },   // Arriba Izquierda
-    5: { top: '14%', left: '50%' },   // Arriba Centro
-    6: { top: '22%', left: '76%' },   // Arriba Derecha
-    7: { top: '50%', left: '91%' },   // Medio Derecha
-    8: { top: '78%', left: '76%' }    // Abajo Derecha
+    1: { top: '80%', left: '50%' },   // Abajo Centro (más adentro)
+    2: { top: '72%', left: '24%' },   // Abajo Izquierda (más adentro)
+    3: { top: '50%', left: '10%' },   // Medio Izquierda
+    4: { top: '28%', left: '24%' },   // Arriba Izquierda (más adentro)
+    5: { top: '20%', left: '50%' },   // Arriba Centro (más adentro)
+    6: { top: '28%', left: '76%' },   // Arriba Derecha (más adentro)
+    7: { top: '50%', left: '90%' },   // Medio Derecha
+    8: { top: '72%', left: '76%' }    // Abajo Derecha (más adentro)
 };
 
 // Raise Slider Sync Helpers
@@ -101,21 +101,20 @@ function syncRaiseSliderFromInput(val) {
 
 function handleRaiseClick() {
     const isMobile = window.innerWidth <= 950;
-    const isMobilePortrait = isMobile && window.innerHeight > window.innerWidth;
     const sliderContainer = document.getElementById('raiseSliderContainer');
     const raiseBtn = document.getElementById('actionRaiseBtn');
     const raiseText = document.getElementById('actionRaiseText');
     const raiseIcon = document.getElementById('actionRaiseIcon');
     
-    if (isMobilePortrait && (sliderContainer.style.display === 'none' || !sliderContainer.style.display)) {
-        // Solo en móvil vertical se realiza la expansión del slider al hacer click
+    if (isMobile && (sliderContainer.style.display === 'none' || !sliderContainer.style.display)) {
+        // En móviles (vertical u horizontal), mostramos primero el slider de apuestas
         sliderContainer.style.display = 'block';
-        if (raiseText) raiseText.innerText = 'Confirmar';
+        if (raiseText) raiseText.innerText = 'Apostar';
         if (raiseIcon) raiseIcon.innerText = 'check';
-        raiseBtn.style.background = '#10b981'; // Color verde de éxito para confirmar
+        raiseBtn.style.background = '#10b981'; // Color verde para confirmar
         raiseBtn.style.color = 'white';
     } else {
-        // En desktop y landscape, o si ya está desplegado en portrait, se envía la acción de Raise
+        // En desktop, o si el slider ya está visible en móviles, se envía la acción
         sendPlayerAction('RAISE');
     }
 }
@@ -638,12 +637,11 @@ function syncActionPanel(update) {
 
         if (totalChipsForRaise >= minRaise) {
             const isMobile = window.innerWidth <= 950;
-            const isMobilePortrait = isMobile && window.innerHeight > window.innerWidth;
-            if (isMobilePortrait) {
-                // Solo en móvil vertical (Portrait) se oculta por defecto
+            if (isMobile) {
+                // En todos los dispositivos móviles se oculta por defecto hasta que se pulse Raise
                 raiseSliderContainer.style.display = 'none';
             } else {
-                // En desktop y móvil horizontal (Landscape) se muestra de inmediato
+                // En desktop se muestra de inmediato
                 raiseSliderContainer.style.display = 'block';
             }
             raiseSlider.min = minRaise;
