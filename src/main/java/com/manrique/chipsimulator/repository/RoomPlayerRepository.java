@@ -12,5 +12,7 @@ public interface RoomPlayerRepository extends JpaRepository<RoomPlayer, Long> {
     List<RoomPlayer> findByRoomIdOrderBySeatNumberAsc(Long roomId);
     
     int countByRoomId(Long roomId);
+
+    java.util.Optional<RoomPlayer> findByRoomIdAndUserUsername(Long roomId, String username);
     
 }

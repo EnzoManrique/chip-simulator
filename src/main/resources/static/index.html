@@ -269,6 +269,21 @@
         </div>
     </div>
 
+    <!-- Modal de Reconexión de Sala -->
+    <div class="modal" id="reconnectModal" style="display: none;">
+        <div class="modal-content" style="text-align: center; max-width: 340px;">
+            <div style="font-size: 36px; margin-bottom: 8px;">🎮</div>
+            <div class="modal-title" style="border-bottom: none; padding-bottom: 0; margin-bottom: 8px;">Partida Detectada</div>
+            <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5;" id="reconnectModalText">
+                ¿Deseas volver a ingresar a la sala activa?
+            </div>
+            <div style="display: flex; gap: 8px; justify-content: center;">
+                <button class="btn btn-outline" style="flex: 1; height: 44px;" onclick="cancelReconnect()">Descartar</button>
+                <button class="btn btn-accent" style="flex: 1; height: 44px;" onclick="acceptReconnect()">Reconectar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Custom JS Scripts -->
     <script src="/js/app.js"></script>
 </body>

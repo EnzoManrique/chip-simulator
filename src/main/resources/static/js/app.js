@@ -55,36 +55,36 @@ function handleAuthSubmit() {
 // Position nodes radially around the 700x380 oval table
 // Coordinate mapping based on seat number (1 to 8)
 const seatCoords = {
-    1: { top: '85%', left: '50%' },   // Bottom Center (Normal player focus)
-    2: { top: '75%', left: '20%' },   // Bottom Left
-    3: { top: '50%', left: '10%' },   // Middle Left
-    4: { top: '25%', left: '20%' },   // Top Left
-    5: { top: '15%', left: '50%' },   // Top Center
-    6: { top: '25%', left: '80%' },   // Top Right
-    7: { top: '50%', left: '90%' },   // Middle Right
-    8: { top: '75%', left: '80%' }    // Bottom Right
+    1: { top: '100%', left: '50%' },   // Bottom Center (On the rail)
+    2: { top: '85%', left: '15%' },    // Bottom Left
+    3: { top: '50%', left: '0%' },     // Middle Left
+    4: { top: '15%', left: '15%' },    // Top Left
+    5: { top: '0%', left: '50%' },     // Top Center
+    6: { top: '15%', left: '85%' },    // Top Right
+    7: { top: '50%', left: '100%' },   // Middle Right
+    8: { top: '85%', left: '85%' }     // Bottom Right
 };
 
 const mobileSeatCoords = {
-    1: { top: '88%', left: '50%' },   // Abajo Centro
-    2: { top: '74%', left: '18%' },   // Abajo Izquierda
-    3: { top: '50%', left: '14%' },   // Medio Izquierda
-    4: { top: '26%', left: '18%' },   // Arriba Izquierda
-    5: { top: '12%', left: '50%' },   // Arriba Centro
-    6: { top: '26%', left: '82%' },   // Arriba Derecha
-    7: { top: '50%', left: '86%' },   // Medio Derecha
-    8: { top: '74%', left: '82%' }    // Abajo Derecha
+    1: { top: '100%', left: '50%' },   // Abajo Centro (al borde)
+    2: { top: '82%', left: '12%' },    // Abajo Izquierda
+    3: { top: '50%', left: '0%' },     // Medio Izquierda
+    4: { top: '18%', left: '12%' },    // Arriba Izquierda
+    5: { top: '0%', left: '50%' },     // Arriba Centro
+    6: { top: '18%', left: '88%' },    // Arriba Derecha
+    7: { top: '50%', left: '100%' },   // Medio Derecha
+    8: { top: '82%', left: '88%' }     // Abajo Derecha
 };
 
 const landscapeSeatCoords = {
-    1: { top: '80%', left: '50%' },   // Abajo Centro (más adentro)
-    2: { top: '72%', left: '24%' },   // Abajo Izquierda (más adentro)
-    3: { top: '50%', left: '10%' },   // Medio Izquierda
-    4: { top: '28%', left: '24%' },   // Arriba Izquierda (más adentro)
-    5: { top: '20%', left: '50%' },   // Arriba Centro (más adentro)
-    6: { top: '28%', left: '76%' },   // Arriba Derecha (más adentro)
-    7: { top: '50%', left: '90%' },   // Medio Derecha
-    8: { top: '72%', left: '76%' }    // Abajo Derecha (más adentro)
+    1: { top: '100%', left: '50%' },   // Abajo Centro (al borde)
+    2: { top: '84%', left: '20%' },    // Abajo Izquierda
+    3: { top: '50%', left: '5%' },     // Medio Izquierda
+    4: { top: '16%', left: '20%' },    // Arriba Izquierda
+    5: { top: '0%', left: '50%' },     // Arriba Centro
+    6: { top: '16%', left: '80%' },    // Arriba Derecha
+    7: { top: '50%', left: '95%' },    // Medio Derecha
+    8: { top: '84%', left: '80%' }     // Abajo Derecha
 };
 
 // Raise Slider Sync Helpers
@@ -234,6 +234,7 @@ async function handleLogin() {
 
 function loginUserSuccess(user) {
     currentUser = user;
+    localStorage.setItem('currentUser', JSON.stringify(user));
     document.getElementById('loggedInUserLabel').innerText = user.username;
     navigateToScreen('lobby');
     log(`Hola ${user.username}, ya puedes unirte o crear salas.`);
@@ -244,6 +245,8 @@ function handleLogout() {
     currentUser = null;
     activeRoomCode = null;
     roomState = null;
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('activeRoomCode');
 
     navigateToScreen('auth');
     
@@ -305,6 +308,7 @@ async function joinRoom(code = null) {
         log(`Te uniste a la sala ${roomCode} en el asiento #${player.seatNumber}`, 'success');
         
         activeRoomCode = roomCode;
+        localStorage.setItem('activeRoomCode', roomCode);
         document.getElementById('roomCodeBadge').innerText = roomCode;
         document.getElementById('adminActionsPanel').style.display = 'flex';
 
@@ -320,6 +324,7 @@ async function joinRoom(code = null) {
         }
     } catch (err) {
         log(`Error al unirse: ${err.message}`, 'error');
+        localStorage.removeItem('activeRoomCode');
     }
 }
 
@@ -722,6 +727,7 @@ function toggleConsoleDrawer() {
 function leaveRoom() {
     disconnectWebSocket();
     activeRoomCode = null;
+    localStorage.removeItem('activeRoomCode');
     roomState = null;
     
     // Resetear UI de la mesa
@@ -765,5 +771,44 @@ if ('serviceWorker' in navigator) {
 window.addEventListener('resize', () => {
     if (roomState && roomState.players) {
         renderPlayers(roomState.players, roomState.currentPlayerUsername);
+    }
+});
+
+// Variable global para reconexión pendiente
+let pendingReconnectRoomCode = null;
+
+async function acceptReconnect() {
+    document.getElementById('reconnectModal').style.display = 'none';
+    if (pendingReconnectRoomCode) {
+        const roomCode = pendingReconnectRoomCode;
+        pendingReconnectRoomCode = null;
+        await joinRoom(roomCode);
+    }
+}
+
+function cancelReconnect() {
+    document.getElementById('reconnectModal').style.display = 'none';
+    localStorage.removeItem('activeRoomCode');
+    pendingReconnectRoomCode = null;
+    navigateToScreen('lobby');
+}
+
+// Carga de la aplicación: comprobar persistencia
+window.addEventListener('load', () => {
+    const savedUser = localStorage.getItem('currentUser');
+    const savedRoom = localStorage.getItem('activeRoomCode');
+    
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        document.getElementById('loggedInUserLabel').innerText = currentUser.username;
+        log(`Sesión recuperada: ${currentUser.username}`, 'success');
+        
+        if (savedRoom) {
+            pendingReconnectRoomCode = savedRoom;
+            document.getElementById('reconnectModalText').innerText = `Detectamos que estabas jugando en la sala ${savedRoom}. ¿Deseas volver a unirte?`;
+            document.getElementById('reconnectModal').style.display = 'flex';
+        } else {
+            navigateToScreen('lobby');
+        }
     }
 });

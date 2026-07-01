@@ -124,6 +124,21 @@ public class RoomManagementService {
         Room room = roomRepository.findByCode(roomCode)
                 .orElseThrow(() -> new RuntimeException("Room not found"));
 
+        // Verificar si el jugador ya está en la sala para reconectarlo
+        java.util.Optional<RoomPlayer> existingPlayerOpt = roomPlayerRepository
+                .findByRoomIdAndUserUsername(room.getId(), request.username());
+
+        if (existingPlayerOpt.isPresent()) {
+            RoomPlayer existingPlayer = existingPlayerOpt.get();
+            existingPlayer.setIsConnected(true);
+            roomPlayerRepository.save(existingPlayer);
+
+            // Notificar la reconexión a través de WebSockets
+            eventPublisher.publishEvent(new RoomUpdateEvent(room, "Reconexión: " + request.username() + " se ha vuelto a unir"));
+
+            return new RoomPlayerResponseDTO(existingPlayer.getUser().getUsername(), existingPlayer.getSeatNumber(), existingPlayer.getChipsBalance());
+        }
+
         User user = userRepository.findByUsername(request.username())
                 .orElseGet(() -> {
                     User newUser = User.builder()
