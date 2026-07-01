@@ -15,4 +15,6 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
     
     List<Room> findByStatus(RoomStatus status);
     
+    List<Room> findByUpdatedAtBefore(java.time.LocalDateTime cutoff);
+    
 }
