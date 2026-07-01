@@ -29,17 +29,20 @@ function switchAuthTab(mode) {
     const tabLogin = document.getElementById('tab-login');
     const tabRegister = document.getElementById('tab-register');
     const emailInputGroup = document.getElementById('emailInputGroup');
+    const recoveryPinInputGroup = document.getElementById('recoveryPinInputGroup');
     const authSubmitBtn = document.getElementById('authSubmitBtn');
     
     if (mode === 'login') {
         tabLogin.classList.add('active');
         tabRegister.classList.remove('active');
         emailInputGroup.style.display = 'none';
+        recoveryPinInputGroup.style.display = 'none';
         authSubmitBtn.innerText = 'Entrar';
     } else {
         tabRegister.classList.add('active');
         tabLogin.classList.remove('active');
         emailInputGroup.style.display = 'flex';
+        recoveryPinInputGroup.style.display = 'flex';
         authSubmitBtn.innerText = 'Registrarse';
     }
 }
@@ -195,15 +198,16 @@ async function handleRegister() {
     const username = document.getElementById('usernameInput').value.trim();
     const email = document.getElementById('emailInput').value.trim();
     const password = document.getElementById('passwordInput').value;
+    const recoveryPin = document.getElementById('recoveryPinInput').value.trim();
     const banner = document.getElementById('authStatusBanner');
 
-    if (!username || !email || !password) {
+    if (!username || !email || !password || !recoveryPin) {
         showAuthBanner('Completa todos los campos', 'error');
         return;
     }
 
     try {
-        const data = await apiCall('/api/auth/register', 'POST', { username, email, password });
+        const data = await apiCall('/api/auth/register', 'POST', { username, email, password, recoveryPin });
         log(`Usuario registrado: ${data.username}`, 'success');
         loginUserSuccess(data);
     } catch (err) {
@@ -267,6 +271,45 @@ function showAuthBanner(msg, type) {
     banner.className = `status-banner ${type}`;
     banner.style.display = 'block';
     setTimeout(() => banner.style.display = 'none', 4000);
+}
+
+function showResetPasswordView(event) {
+    if (event) event.preventDefault();
+    document.getElementById('authMainPanel').style.display = 'none';
+    document.getElementById('authResetPanel').style.display = 'block';
+    document.getElementById('authStatusBanner').style.display = 'none';
+}
+
+function hideResetPasswordView() {
+    document.getElementById('authResetPanel').style.display = 'none';
+    document.getElementById('authMainPanel').style.display = 'block';
+    document.getElementById('authStatusBanner').style.display = 'none';
+}
+
+async function handleResetPasswordSubmit() {
+    const username = document.getElementById('resetUsernameInput').value.trim();
+    const recoveryPin = document.getElementById('resetPinInput').value.trim();
+    const newPassword = document.getElementById('resetNewPasswordInput').value;
+
+    if (!username || !recoveryPin || !newPassword) {
+        showAuthBanner('Completa todos los campos', 'error');
+        return;
+    }
+
+    try {
+        await apiCall('/api/auth/reset-password', 'POST', { username, recoveryPin, newPassword });
+        log('Contraseña restablecida correctamente. Ya puedes iniciar sesión.', 'success');
+        showAuthBanner('Contraseña restablecida. Inicia sesión.', 'success');
+        hideResetPasswordView();
+        
+        // Limpiar inputs
+        document.getElementById('resetUsernameInput').value = '';
+        document.getElementById('resetPinInput').value = '';
+        document.getElementById('resetNewPasswordInput').value = '';
+    } catch (err) {
+        log(`Error al restablecer contraseña: ${err.message}`, 'error');
+        showAuthBanner(err.message, 'error');
+    }
 }
 
 // Room management Rest APIs

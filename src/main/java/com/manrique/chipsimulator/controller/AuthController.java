@@ -29,4 +29,10 @@ public class AuthController {
     public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
         return ResponseEntity.ok(authService.loginUser(request));
     }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody com.manrique.chipsimulator.dto.ResetPasswordRequestDTO request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok().build();
+    }
 }

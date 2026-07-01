@@ -27,6 +27,9 @@ public class User {
     @Column(unique = true, nullable = false, length = 100)
     private String email;
 
+    @Column(name = "recovery_pin_hash", nullable = true)
+    private String recoveryPinHash;
+
     @Column(name = "total_games")
     @Builder.Default
     private Integer totalGames = 0;

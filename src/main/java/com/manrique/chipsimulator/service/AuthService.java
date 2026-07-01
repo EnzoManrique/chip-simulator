@@ -31,6 +31,7 @@ public class AuthService {
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRecoveryPinHash(passwordEncoder.encode(request.getRecoveryPin()));
         
         User savedUser = userRepository.save(user);
 
@@ -56,5 +57,25 @@ public class AuthService {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .build();
+    }
+
+    public void resetPassword(com.manrique.chipsimulator.dto.ResetPasswordRequestDTO request) {
+        Optional<User> userOptional = userRepository.findByUsername(request.getUsername());
+        if (userOptional.isEmpty()) {
+            userOptional = userRepository.findByEmail(request.getUsername());
+        }
+
+        User user = userOptional.orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        if (user.getRecoveryPinHash() == null) {
+            throw new IllegalStateException("El usuario no tiene configurado un PIN de recuperación");
+        }
+
+        if (!passwordEncoder.matches(request.getRecoveryPin(), user.getRecoveryPinHash())) {
+            throw new org.springframework.security.authentication.BadCredentialsException("PIN de recuperación incorrecto");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 }
